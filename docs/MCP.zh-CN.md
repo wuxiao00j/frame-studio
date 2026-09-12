@@ -132,3 +132,13 @@ python3 scripts/mcp-smoke.py "/Applications/原境 Frame Studio.app/Contents/Mac
 旧文件以页面顺序第一个 Tab 为准；批量修改多个 Tab 且配置冲突时，文档顺序中第一个被修改的已有 Tab 为准。优先只更新一个 Tab，读取返回的完整项目与最新 revision；旧 `syncTabIcons=false` 不再关闭共享。
 
 `backButton` 默认左上角固定。`decompose_component` 返回已经解组的基础图层，保留位置和尺寸。Agent 可读取项目后，将同页多选图层的 `groupID` 设为同一个新 ID，再用 `replace_project` 与 `expectedRevision` 原子提交以组合；将这些图层的 `groupID` 清空即可解组。保存复用请使用 `create_component_template`。
+
+## SwiftUI 结构化导入（Beta.5）
+
+`inspect_ui_project` / `inspect_swift_project` 返回 `pages`、`templates`、`classifications`、`unmatched` 和 `warnings`。SwiftUI 按 View 结构展开；其他语言仍采用基础分类。`warnings` 中“导入限制：”表示动态内容或近似处理，不是缺少预设。
+
+导入不同工程时，使用独立的项目文件连接 MCP，检查报告后用 `replace_project` 同时写入页面、模板和说明。`import_ui_project` / `import_swift_project` 为兼容旧客户端仍然追加到当前项目，并添加 `templates`；所有已有 Tab 的共用规则依然有效。避免把两个无关 App 追加到同一个设计。当前桌面导入入口默认另存独立设计。
+
+Agent 应先核对真实入口、目标主题和运行状态，再逐项处理未解析的动态值与布局；不要把“未匹配为零”描述为完整还原。
+
+Agent 可以向 `inspect_ui_project` / `inspect_swift_project`（以及对应 import 工具）传入 `values` 和 `colors`：键为源码表达式，值分别是 Swift 字面量字符串与 HEX 颜色。例如 `values: {"session.isLoggedIn": "false", "items": "[]"}`、`colors: {"Theme.tint": "875F64"}`。这些参数只用于非执行解析；必须来自用户指定的运行状态或可核对的源码，不能填入猜测的业务数据。导入器可以据此选择条件分支、填入简单字符串插值和主题颜色。

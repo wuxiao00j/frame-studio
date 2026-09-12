@@ -192,7 +192,24 @@ import StudioCore
     func adopt(_ p:DesignProject,url:URL) {project=p;self.url=url;revisionOnDisk=p.revision;pageID=p.pages[0].id;selection=[];undoStack=[];redoStack=[];variant=visibleVariants[0];status="已打开 \(url.lastPathComponent)"}
     func openProject() {let panel=NSOpenPanel();panel.allowedContentTypes=[.init(filenameExtension:"framestudio") ?? .json,.json];if panel.runModal() == .OK,let file=panel.url {do{adopt(try ProjectStore.load(file),url:file)}catch{self.error=error.localizedDescription}}}
     func saveAs() {let panel=NSSavePanel();panel.nameFieldStringValue=project.name+".framestudio";if panel.runModal() == .OK,let dest=panel.url{do{let p=try ProjectStore.save(project,to:dest,expectedRevision:nil);adopt(p,url:dest)}catch{self.error=error.localizedDescription}}}
-    func importSwift() {let panel=NSOpenPanel();panel.canChooseDirectories=true;panel.canChooseFiles=true;panel.message="选择 SwiftUI、Flutter、Compose、React 等源文件或项目目录，分类导入 UI 草稿";if panel.runModal() == .OK,let file=panel.url{do{let report=try SwiftImporter.inspect(file);change{$0.pages += report.pages;$0.importNotes += report.warnings};if let first=report.pages.first{selectPage(first.id)};showImportReport=true}catch{self.error=error.localizedDescription}}}
+    func importSwift() {
+        let panel=NSOpenPanel();panel.canChooseDirectories=true;panel.canChooseFiles=true
+        panel.message="选择旧 UI 源码；将另存为独立设计，避免与当前项目的页面和 Tab 混合"
+        guard panel.runModal() == .OK,let file=panel.url else{return}
+        status="正在读取 View 结构与复用组件…"
+        Task {
+            do {
+                let report=try await Task.detached {try SwiftImporter.inspect(file)}.value
+                guard !report.pages.isEmpty else{throw StudioError.invalid("未找到可导入的 View 页面。请查看源目录或通过 Agent 读取源码。")}
+                let save=NSSavePanel();save.nameFieldStringValue=file.deletingPathExtension().lastPathComponent+".framestudio"
+                save.message="保存为新的设计项目；原项目与当前设计均保留"
+                guard save.runModal() == .OK,let destination=save.url else{status="已取消导入";return}
+                let p=try ProjectStore.save(report.project(named:file.deletingPathExtension().lastPathComponent),to:destination,expectedRevision:nil)
+                adopt(p,url:destination);showImportReport=true
+            }catch{self.error=error.localizedDescription;status="导入未完成"}
+        }
+    }
+
     func chooseImage(_ id:String) {if let data=loadImageData(){updateNode(id){$0.imageData=data}}}
     func export() {performExport(exportFormat)}
     func performExport(_ format:ExportFormat) {

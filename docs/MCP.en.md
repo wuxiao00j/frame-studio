@@ -132,3 +132,13 @@ Updating any Tab through `update_component` synchronizes its complete configurat
 Legacy files use the first Tab in page order. If a bulk mutation changes several existing Tabs inconsistently, the first changed existing Tab in document order wins. Prefer updating one Tab and reading the returned project and revision. Legacy `syncTabIcons=false` no longer disables sharing.
 
 A `backButton` defaults to a pinned top-left position. `decompose_component` returns ungrouped primitives with their layout preserved. Agents can read the project, assign one new `groupID` to selected layers on the same page, and submit with `replace_project` plus `expectedRevision` to group them atomically; clear those group IDs to ungroup. Use `create_component_template` to save a reusable composite.
+
+## Structured SwiftUI import (Beta.5)
+
+`inspect_ui_project` / `inspect_swift_project` return `pages`, `templates`, `classifications`, `unmatched` and `warnings`. SwiftUI uses View structure expansion; other languages retain basic classification. Warnings prefixed with `导入限制：` describe dynamic values or approximations, not missing presets.
+
+Use a separate MCP project file for an unrelated app, inspect the report, then write its pages, templates and notes with `replace_project`. For client compatibility, `import_ui_project` / `import_swift_project` still append to the current project, now including templates. Shared Tab rules still apply, so avoid appending unrelated apps to one design. The desktop import flow defaults to saving an independent document.
+
+Agents should verify the real entry screens, intended theme and runtime state before addressing unresolved values and layout. Zero unmatched Views must not be presented as complete reconstruction.
+
+Agents can pass `values` and `colors` to `inspect_ui_project` / `inspect_swift_project` and the corresponding import tools. Keys are source expressions; values are Swift-literal strings or HEX colors. For example, `values: {"session.isLoggedIn": "false", "items": "[]"}` and `colors: {"Theme.tint": "875F64"}`. Parameters are interpreted as data by the non-executing parser and must come from the intended runtime state or verified source, never invented business data. They help select branches, resolve simple interpolation and apply theme colors.

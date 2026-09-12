@@ -43,9 +43,13 @@ Supported profile, list, card, navigation, switch and button presets can be deco
 
 ## Import existing UI
 
-**导入旧 UI 项目 / Import existing UI** accepts SwiftUI, Flutter, Compose, JSX / HTML files or directories. The report separates preset matches, unmatched components and import notes.
+**导入旧 UI 项目 / Import existing UI** accepts a source file or directory. For SwiftUI, select the directory containing the Views, theme and assets so reusable components can resolve across files. After analysis, save a new `.framestudio` document. The current design is preserved and shared Tabs from different projects stay separate.
 
-Static recognition produces an editable draft. Complex dynamic layouts, state and navigation still require a developer or agent to inspect the source. Unmatched controls retain their names and source locations as explicit placeholders. Use the report to request additional presets.
+SwiftUI import reads View declarations. Stores, property wrappers, models and event handlers do not become pages. Source-defined components are expanded where supported; common VStack / HStack / ZStack layouts, padding, frames, fonts, colors and radii retain their scopes. Tab destinations and sheets become pages; other reusable components go into the library. Flutter, Compose and JSX / HTML retain basic classification.
+
+The report separates component/reuse mappings, unmatched Views, reconstruction limitations and general notes. **Zero unmatched Views does not mean exact visual fidelity.** Dynamic text, authentication state, server data, computed themes, custom layouts, gradients and unsupported modifiers may still need agent-assisted reconstruction against source or a running reference. Lists can use a single sample or a declared default order. Unknown colors and images use explicit neutral placeholders.
+
+Import never runs or modifies original code or reads the original app's authentication data. Compare against the intended theme and state, then address the reconstruction report.
 
 ## Hand UI source to developers
 

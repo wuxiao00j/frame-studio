@@ -1,6 +1,11 @@
 import Foundation
 import AppKit
 
+public struct SwiftImportOptions:Codable,Sendable {
+    public var values:[String:String]
+    public var colors:[String:String]
+    public init(values:[String:String]=[:],colors:[String:String]=[:]){self.values=values;self.colors=colors}
+}
 public struct UnmatchedComponent:Codable,Sendable {public var typeName:String;public var sourceReference:String}
 public struct ImportClassification:Codable,Sendable {public var sourceType:String;public var componentKind:String;public var count:Int}
 public struct ImportReport:Codable,Sendable {
@@ -9,6 +14,11 @@ public struct ImportReport:Codable,Sendable {
     public var files:[String]
     public var unmatched:[UnmatchedComponent]=[]
     public var classifications:[ImportClassification]=[]
+    public var templates:[ComponentTemplate]=[]
+    public func project(named name:String)->DesignProject {
+        var project=DesignProject();project.name=name;project.pages=pages;project.templates=templates;project.importNotes=warnings
+        return SharedTabBar.normalized(project)
+    }
 }
 public enum SwiftImporter {
     static let mappings:[String:ComponentKind] = [
@@ -25,7 +35,9 @@ public enum SwiftImporter {
     ]
     static let structure:Set<String>=["VStack","HStack","ZStack","Group","GeometryReader","ForEach","NavigationStack","NavigationView","ScrollView","List","Form","Section","Column","Row","Stack","Positioned","Padding","Align","Center","Expanded","Flexible","SafeArea","Scaffold","MaterialApp","Material","SingleChildScrollView","Box","BoxWithConstraints","LazyColumn","LazyRow","Surface"]
     static let utilities:Set<String>=["Color","Font","TextStyle","ThemeData","ColorScheme","Size","Offset","Rect","CGRect","CGSize","EdgeInsets","BorderRadius","BoxDecoration","RoundedRectangleBorder","Date","DateTime","Calendar","URL","State","Binding","ObservedObject","StateObject","CGFloat","Double","Int","String","List","Set","Map","ValueKey","Key","IconData","NavigationItem","Modifier"]
-    public static func inspect(_ url:URL)throws->ImportReport {
+    public static func inspect(_ url:URL,options:SwiftImportOptions=SwiftImportOptions())throws->ImportReport {
+        guard options.values.count+options.colors.count<=300,options.values.allSatisfy({$0.key.count<512 && $0.value.count<8000}),options.colors.keys.allSatisfy({$0.count<512}) else{throw StudioError.invalid("导入参数过多或过长")}
+        for color in options.colors.values{try ProjectStore.validateColor(color)}
         var isDir:ObjCBool=false;guard FileManager.default.fileExists(atPath:url.path,isDirectory:&isDir) else{throw StudioError.invalid("导入路径不存在")}
         let root=isDir.boolValue ? url:url.deletingLastPathComponent()
         let inventory=try SourceInspector.inventory(root)
@@ -33,8 +45,13 @@ public enum SwiftImporter {
         let files=isDir.boolValue ? (inventory["sourceFiles"] as? [String] ?? []).map{URL(fileURLWithPath:$0)}.filter{accepted.contains($0.pathExtension)} : [url]
         let assetFiles=(inventory["assets"] as? [String] ?? []).map{URL(fileURLWithPath:$0)}
         var report=ImportReport(pages:[],warnings:[],files:files.map(\.path).sorted())
+        let swiftFiles=files.filter{$0.pathExtension=="swift"}
+        if !swiftFiles.isEmpty {
+            report=SwiftStructuredImporter.inspect(files:Array(swiftFiles.prefix(500)),assets:assetFiles,options:options)
+            report.files=files.map(\.path).sorted()
+        }
         var counts:[String:Int]=[:]
-        for file in files.prefix(500) {
+        for file in files.filter({$0.pathExtension != "swift"}).prefix(500) {
             guard let data=try? Data(contentsOf:file),data.count<2_000_000,let source=String(data:data,encoding:.utf8) else{continue}
             if file.pathExtension=="swift" && !source.contains("import SwiftUI") && source.range(of:#":\s*(?:SwiftUI\.)?View\b"#,options:.regularExpression)==nil{continue}
             if file.pathExtension=="dart" && !source.contains("Widget") && !source.contains("package:flutter"){continue}
@@ -93,10 +110,11 @@ public enum SwiftImporter {
             }
             if !page.nodes.isEmpty {report.pages.append(page);report.warnings.append("\(file.lastPathComponent)：已分类 \(page.nodes.count) 个组件。当前为可编辑草稿；动态布局、条件、状态和业务动作需 Agent 对照源码继续还原。")}
         }
-        report.classifications=counts.keys.sorted().map{let parts=$0.split(separator:"|");return ImportClassification(sourceType:String(parts[0]),componentKind:String(parts[1]),count:counts[$0]!)}
-        for row in report.classifications {report.warnings.append("分类：\(row.sourceType) → \(ComponentKind(rawValue:row.componentKind)?.title ?? row.componentKind) × \(row.count)")}
+        let additional=counts.keys.sorted().map{let parts=$0.split(separator:"|");return ImportClassification(sourceType:String(parts[0]),componentKind:String(parts[1]),count:counts[$0]!)}
+        report.classifications += additional
+        for row in additional {report.warnings.append("分类：\(row.sourceType) → \(ComponentKind(rawValue:row.componentKind)?.title ?? row.componentKind) × \(row.count)")}
         var seen=Set<String>();report.unmatched=report.unmatched.filter{seen.insert($0.typeName+"|"+$0.sourceReference).inserted}
-        for unknown in report.unmatched {report.warnings.append("未匹配预设：\(unknown.typeName)（\(unknown.sourceReference)）。已保留信息，可以指定添加此预设。")}
+        for unknown in report.unmatched where !report.warnings.contains(where:{$0.hasPrefix("未匹配预设："+unknown.typeName+"（"+unknown.sourceReference)}) {report.warnings.append("未匹配预设：\(unknown.typeName)（\(unknown.sourceReference)）。已保留信息，可以指定添加此预设。")}
         if report.pages.isEmpty{report.warnings.append("未找到可识别 UI 控件。可用 MCP 读取源码并重建页面。")}
         return report
     }

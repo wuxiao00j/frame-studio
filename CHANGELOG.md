@@ -1,5 +1,17 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.5 — 2026-09-12
+
+新增 Agent 导入状态与颜色参数，可根据实际运行界面选择分支、还原简单插值和主题颜色。 / Added agent-supplied import state and color parameters for branch selection, simple interpolation and verified theme colors.
+
+SwiftUI 导入改为读取 View 声明与视图结构：排除状态、数据模型和事件处理代码；展开源码中的自定义 View、计算属性、ViewBuilder 内容与支持的 ViewModifier；保留常见横纵布局、局部样式和六套尺寸布局。Tab 目标页与复用组件分开整理，弹窗单独作为页面。界面导入默认另存为独立设计，避免混入当前项目的共用 Tab。
+
+动态数据、分支、主题、自定义 Layout 与不支持的修饰器独立列为“待还原”，不再全部误报为缺少组件预设。该流程仍是静态、可编辑草稿，不能保证任意项目与运行画面像素一致；源码不会被运行或修改。
+
+SwiftUI import now reads View declarations and structure, excluding state, model constructors and event handlers. It expands source-defined Views, computed view members, ViewBuilder content and supported ViewModifiers, retaining common stacks, scoped styles and six layouts. Tab destinations, modal pages and reusable templates are separated. Desktop imports save as independent designs to avoid mixing shared Tabs with the current project.
+
+Dynamic data, branches, themes, custom Layouts and unsupported modifiers are listed as reconstruction limitations instead of missing component presets. Import remains a static editable draft, not a promise of pixel-exact runtime reconstruction. Original source is neither executed nor modified.
+
 ## 1.2.0-beta.4 — 2026-09-12
 
 修复选择组件后点击或编辑 X / Y / W / H 输入框时的闪退。属性修改改为在独立草稿上完成再提交，避免修改项目时重叠读取同一份数据；同时修复进度样式切换与布局复制的同类访问冲突。坐标输入始终读取最新值，继续支持 Tab 同步、自动保存和撤销重做。新增 6 项编辑器层回归测试，覆盖焦点回写、六套布局、手势提交、无效值回滚和 Agent 版本冲突。

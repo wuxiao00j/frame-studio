@@ -93,12 +93,12 @@ final class AppDelegate:NSObject,NSApplicationDelegate {
     let session:EditorSession
     @Environment(\.dismiss) var dismiss
     @State private var category=0
-    var lines:[String] {session.project.importNotes.filter{note in switch category {case 0:return note.hasPrefix("分类：");case 1:return note.hasPrefix("未匹配预设：");default:return !note.hasPrefix("分类：") && !note.hasPrefix("未匹配预设：")}}}
+    var lines:[String] {session.project.importNotes.filter{note in switch category {case 0:return note.hasPrefix("分类：") || note.hasPrefix("展开复用：");case 1:return note.hasPrefix("未匹配预设：");case 2:return note.hasPrefix("导入限制：");default:return !["分类：","展开复用：","未匹配预设：","导入限制："].contains(where:note.hasPrefix)}}}
     var body:some View {
         VStack(alignment:.leading,spacing:16) {
             HStack{Text("旧 UI 项目 · 组件分类").font(.title2.bold());Spacer();Button("完成"){dismiss()}.keyboardShortcut(.defaultAction)}
-            Text("已识别控件对应现有预设；未匹配控件保留名称和源码位置，可继续补充预设。布局为可编辑草稿。").font(.system(size:12)).foregroundStyle(studioMuted)
-            Picker("报告分类",selection:$category){Text("组件分类").tag(0);Text("未匹配预设").tag(1);Text("导入说明").tag(2)}.pickerStyle(.segmented).labelsHidden()
+            Text("SwiftUI 按 View 结构导入，复用组件从源码展开。动态内容和布局近似单独列在“待还原”；只有真实缺失的视图才列为未匹配。").font(.system(size:12)).foregroundStyle(studioMuted)
+            Picker("报告分类",selection:$category){Text("组件与复用").tag(0);Text("未匹配视图").tag(1);Text("待还原").tag(2);Text("导入说明").tag(3)}.pickerStyle(.segmented).labelsHidden()
             ScrollView{VStack(alignment:.leading,spacing:12){if lines.isEmpty{Text(category==1 ? "没有未匹配的控件。":"当前没有此类记录。").foregroundStyle(studioMuted).padding(.top,24)};ForEach(Array(lines.enumerated()),id:\.offset){_,note in Text(note).font(.system(size:12)).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading).padding(12).background(Color(hex:"F7F5FB"),in:RoundedRectangle(cornerRadius:8))}}}
         }.padding(24).frame(width:700,height:500).tint(studioAccent)
     }
