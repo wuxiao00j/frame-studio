@@ -49,7 +49,7 @@ import StudioCore
     let node:DesignNode
     @State private var symbolPicker=false
     func binding<T>(_ key:WritableKeyPath<DesignNode,T>)->Binding<T>{Binding(get:{session.page.nodes.first{$0.id==node.id}?[keyPath:key] ?? node[keyPath:key]},set:{value in session.updateNode(node.id){$0[keyPath:key]=value}})}
-    func rectBinding(_ key:WritableKeyPath<Rect,Double>)->Binding<Double>{Binding(get:{node.frame(session.variant,device:session.project.device)[keyPath:key]},set:{value in session.updateNode(node.id){var r=$0.frame(session.variant,device:session.project.device);r[keyPath:key]=value;$0.frames[session.variant.rawValue]=r}})}
+    func rectBinding(_ key:WritableKeyPath<Rect,Double>)->Binding<Double>{Binding(get:{(session.page.nodes.first{$0.id==node.id} ?? node).frame(session.variant,device:session.project.device)[keyPath:key]},set:{value in session.updateNode(node.id){var r=$0.frame(session.variant,device:session.project.device);r[keyPath:key]=value;$0.frames[session.variant.rawValue]=r}})}
     var body:some View {
         InspectorSection(title:node.kind.title){TextField("图层名称",text:binding(\.name)).textFieldStyle(.roundedBorder)}
         InspectorSection(title:"组合与拆分") {
@@ -114,7 +114,7 @@ import StudioCore
 @MainActor struct NumberField:View {
     let label:String
     @Binding var value:Double
-    var body:some View {HStack(spacing:4){Text(label).foregroundStyle(studioMuted);TextField("",value:$value,format:.number.precision(.fractionLength(0...1))).textFieldStyle(.plain).multilineTextAlignment(.trailing)}.font(.system(size:10)).padding(8).background(Color(hex:"F6F4F9"),in:RoundedRectangle(cornerRadius:6))}
+    var body:some View {HStack(spacing:4){Text(label).foregroundStyle(studioMuted);TextField("",value:$value,format:.number.precision(.fractionLength(0...1))).textFieldStyle(.plain).multilineTextAlignment(.trailing).accessibilityLabel(label)}.font(.system(size:10)).padding(8).background(Color(hex:"F6F4F9"),in:RoundedRectangle(cornerRadius:6))}
 }
 @MainActor struct ColorProperty:View {
     let label:String

@@ -47,10 +47,10 @@ import StudioCore
     var page:DesignPage { project.pages.first{$0.id==pageID} ?? project.pages[0] }
     var selected:DesignNode? { page.nodes.first{selection.contains($0.id)} }
     var visibleVariants:[Variant] { project.wideMode ? (landscape ? [.outerLandscape,.innerLandscape] : [.outerPortrait,.innerPortrait]) : (landscape ? [.standardLandscape] : [.standardPortrait]) }
-    init() {
+    init(projectURL:URL?=nil) {
         let args=CommandLine.arguments
         let arg=args.firstIndex(of:"--project").flatMap{$0+1<args.count ? args[$0+1] : nil}
-        var fileURL=arg.map{URL(fileURLWithPath:$0)} ?? ProjectStore.defaultURL
+        var fileURL=projectURL ?? arg.map{URL(fileURLWithPath:$0)} ?? ProjectStore.defaultURL
         var initialError:String?
         var p:DesignProject
         do {
@@ -62,12 +62,15 @@ import StudioCore
     }
     func change(_ body:(inout DesignProject)->Void) {
         let before=project
-        body(&project)
-        SharedTabBar.reconcile(&project,before:before)
-        guard before != project else { return }
-        if propertyGesture{return}
+        // Inspector bindings may read session.project while editing a node. Mutate a local
+        // draft so the callback never overlaps an exclusive write to the observed property.
+        var draft=before
+        body(&draft)
+        SharedTabBar.reconcile(&draft,before:before)
+        guard before != draft else { return }
+        if propertyGesture{project=draft;return}
         do {
-            project=try ProjectStore.save(project,to:url,expectedRevision:revisionOnDisk); revisionOnDisk=project.revision
+            project=try ProjectStore.save(draft,to:url,expectedRevision:revisionOnDisk); revisionOnDisk=project.revision
             undoStack.append(before); if undoStack.count>80 {undoStack.removeFirst()}; redoStack=[]; status="已自动保存"
         } catch { project=before; self.error=error.localizedDescription; refresh() }
     }

@@ -9,7 +9,7 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Core tests
+      - name: Core and editor regression tests
         run: swift test
       - name: MCP acceptance
         run: python3 scripts/test-mcp.py

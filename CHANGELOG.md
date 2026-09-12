@@ -1,5 +1,11 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.4 — 2026-09-12
+
+修复选择组件后点击或编辑 X / Y / W / H 输入框时的闪退。属性修改改为在独立草稿上完成再提交，避免修改项目时重叠读取同一份数据；同时修复进度样式切换与布局复制的同类访问冲突。坐标输入始终读取最新值，继续支持 Tab 同步、自动保存和撤销重做。新增 6 项编辑器层回归测试，覆盖焦点回写、六套布局、手势提交、无效值回滚和 Agent 版本冲突。
+
+Fix a crash when focusing or editing X / Y / W / H after selecting a component. Inspector mutations now edit a local draft before committing, avoiding overlapping access to the observed project. This also fixes the same conflict in progress-style changes and layout copying. Coordinate bindings read live values while preserving shared Tabs, autosave and undo/redo. Six new editor regression tests cover focus writeback, six variants, gesture commits, invalid-value rollback and Agent revision conflicts.
+
 ## 1.2.0-beta.3 — 2026-09-12
 
 项目内已有 Tab 栏共用全部配置：修改任意页面的项目、排序、图标、样式和对应屏幕的布局会自动同步。新 Tab 继承现有配置，旧设计读取时统一；六种布局独立，页面高亮按当前目标显示。编辑器、MCP、撤销重做和三平台源码导出使用同一规则。

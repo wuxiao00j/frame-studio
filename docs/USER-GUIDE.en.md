@@ -15,6 +15,8 @@ First launch creates a generic demo. The default document is `~/Library/Applicat
 5. Edit text, icons, colors, borders, shadows, spacing and radius in the inspector. Radius has a slider and numeric entry. Press Return after entering HEX colors.
 6. ⌘Z undo, ⇧⌘Z redo, ⌘D duplicate, ⌘⌫ delete selection.
 
+Beta.4 fixes the crash when focusing coordinate fields after selecting a component. Edit X, Y, W or H and press Return or move focus to commit; invalid sizes are rolled back and ⌘Z undoes an edit.
+
 ## Long pages and screen modes
 
 With no layer selected, **长页面滚动 / Page scrolling** lets you enable vertical scrolling and set content height. Content beyond one screen expands the canvas automatically. Scroll with the pointer inside the phone.
