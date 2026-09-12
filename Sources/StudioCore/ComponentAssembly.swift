@@ -1,19 +1,6 @@
 import Foundation
 
 public enum ComponentAssembly {
-    public static func syncTabIcons(before:DesignNode,after:DesignNode,project:inout DesignProject) {
-        guard after.kind == .tabBar,after.syncTabIcons != false else{return}
-        for item in after.items where !item.pageID.isEmpty {
-            guard let old=before.items.first(where:{$0.id==item.id}),old.pageID==item.pageID else{continue}
-            guard old.symbol != item.symbol || old.selectedSymbol != item.selectedSymbol || old.iconData != item.iconData || old.selectedIconData != item.selectedIconData else{continue}
-            for pi in project.pages.indices {for ni in project.pages[pi].nodes.indices where project.pages[pi].nodes[ni].kind == .tabBar && project.pages[pi].nodes[ni].id != after.id {
-                for ii in project.pages[pi].nodes[ni].items.indices where project.pages[pi].nodes[ni].items[ii].pageID==item.pageID {
-                    project.pages[pi].nodes[ni].items[ii].symbol=item.symbol;project.pages[pi].nodes[ni].items[ii].selectedSymbol=item.selectedSymbol;project.pages[pi].nodes[ni].items[ii].iconData=item.iconData;project.pages[pi].nodes[ni].items[ii].selectedIconData=item.selectedIconData
-                }
-            }}
-        }
-    }
-
     public static func instantiate(_ template:ComponentTemplate,origin:Rect,variant:Variant,device:DeviceProfile,pages:Set<String>)->[DesignNode] {
         let group=UUID().uuidString
         var nodes=template.nodes
@@ -33,10 +20,9 @@ public enum ComponentAssembly {
     }
     public static func decompose(_ source:DesignNode,device:DeviceProfile)->[DesignNode] {
         guard source.kind.decomposable else{return [source]}
-        let group=UUID().uuidString
         var result:[DesignNode]=[]
         func add(_ kind:ComponentKind,_ name:String,_ text:String="",_ symbol:String="",font:Double?=nil,asset:String?=nil,action:String="",layout:(Rect)->Rect) {
-            var node=DesignNode(kind:kind);node.groupID=group;node.name=name;node.text=text;node.symbol=symbol;node.fill="FFFFFF00";node.foreground=source.foreground;node.accent=source.accent;node.fontSize=font ?? source.fontSize;node.fontWeight=source.fontWeight;node.cornerRadius=0;node.padding=0;node.iconSize=source.iconSize;node.opacity=source.opacity;node.rotation=source.rotation;node.fixedToViewport=source.isFixed;node.targetPageID=action.isEmpty ? source.targetPageID:action;node.iconData=asset
+            var node=DesignNode(kind:kind);node.name=name;node.text=text;node.symbol=symbol;node.fill="FFFFFF00";node.foreground=source.foreground;node.accent=source.accent;node.fontSize=font ?? source.fontSize;node.fontWeight=source.fontWeight;node.cornerRadius=0;node.padding=0;node.iconSize=source.iconSize;node.opacity=source.opacity;node.rotation=source.rotation;node.fixedToViewport=source.isFixed;node.targetPageID=action.isEmpty ? source.targetPageID:action;node.iconData=asset
             if kind == .rectangle {node.fill=source.fill;node.borderColor=source.borderColor;node.borderWidth=source.borderWidth;node.cornerRadius=source.cornerRadius;node.shadow=source.shadow;node.rowGroupID=source.rowGroupID}
             if kind == .avatar {node.imageData=source.imageData;node.avatarSize=source.avatarSize;node.cornerRadius=source.avatarSize/3;node.fill=source.accent+"22"}
             if kind == .switchControl {node.isOn=source.isOn;node.showLabel=false}

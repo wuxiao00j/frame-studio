@@ -49,7 +49,7 @@ final class StudioCoreTests:XCTestCase {
         page.nodes=ComponentKind.allCases.map{DesignNode(kind:$0)};p.pages.append(page)
         let dir=try temporaryDirectory();let out=try SwiftExporter.export(p,to:dir)
         XCTAssertTrue(FileManager.default.fileExists(atPath:out.appendingPathComponent("GeneratedApp.xcodeproj/project.pbxproj").path))
-        XCTAssertEqual(try ProjectStore.load(out.appendingPathComponent("Design.framestudio")),p)
+        XCTAssertEqual(try ProjectStore.load(out.appendingPathComponent("Design.framestudio")),SharedTabBar.normalized(p))
         let sources=try FileManager.default.contentsOfDirectory(at:out.appendingPathComponent("Sources/GeneratedUI"),includingPropertiesForKeys:nil)
         XCTAssertEqual(sources.filter{$0.pathExtension=="swift"}.count,p.pages.count+2)
         let second=try SwiftExporter.export(p,to:dir);XCTAssertNotEqual(out,second)

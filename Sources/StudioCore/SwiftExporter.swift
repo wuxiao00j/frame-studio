@@ -16,6 +16,7 @@ public enum SwiftExporter {
     static func identifier(_ id:String)->String {"Page_"+id.utf8.map{String(format:"%02X",$0)}.joined()}
     public static func export(_ project:DesignProject,to directory:URL) throws -> URL {
         try ProjectStore.validate(project)
+        let project=SharedTabBar.normalized(project)
         let stamp=ISO8601DateFormatter().string(from:Date()).replacingOccurrences(of:":",with:"-")
         let destination=directory.appendingPathComponent("SwiftUI-\(stamp)-\(UUID().uuidString.prefix(4))")
         let sources=destination.appendingPathComponent("Sources/GeneratedUI")

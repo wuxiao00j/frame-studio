@@ -28,14 +28,16 @@ Navigation and Tab bars are pinned by default; any component can be pinned or al
 - Profile rows can hide QR / chevron icons or use uploaded replacements.
 - Consecutive list rows join automatically, removing internal corner radii while keeping outer corners. Auto-joining can be disabled in page properties.
 - Uploaded local images are stored in the design and exported as PNG assets. System-symbol selection remains available.
-- Each Tab item has default and selected icons, both supporting system symbols or uploaded images. Icons synchronize to other Tab bars targeting the same page by default; synchronization can be disabled.
-- Back buttons and navigation-bar back actions use prototype page history.
+- Each Tab item supports default and selected system symbols or uploaded icons, plus Move up / Move down ordering. All existing Tab bars share the complete configuration: item additions/removals, titles, destinations, icons, colors, radius, typography, spacing, visibility, locking and layout frames. Edit any Tab to update the others. Pages without a Tab are left unchanged, and newly added Tabs inherit the existing configuration. Each page still highlights its own destination.
+- Clicking to add a back button places it at the top left (X=16, Y=52 below the status bar), pinned by default. You can still drag it or allow scrolling. Back buttons decomposed from a navigation bar retain their original position. Back actions use prototype page history.
+
+When opening an older design with divergent Tabs, the first Tab in page order supplies the shared configuration. Reading alone does not rewrite the file; the next saved edit persists the unified result. The six screen variants remain independent, with each variant shared across pages.
 
 ## Create composite components
 
 Shift-select primitive layers, click **创建组合 / Create composite** above the library, and save a name. Click the saved component later to insert another instance.
 
-Supported profile, list, card, navigation, switch and button presets can be decomposed into primitive layers. Ungroup them to adjust text, icons, backgrounds and controls individually, then save a new composite. Custom code components can provide separate SwiftUI, Compose and Flutter expressions; the editor does not execute this code.
+Supported profile, list, card, navigation, switch and button presets can be decomposed into primitive layers. Decomposition automatically ungroups the layers and preserves their positions and sizes. Click individual layers to edit them, then Shift-select and use **组合选中 / Group selection** or ⌘G to regroup. Use **解除组合 / Ungroup** or ⇧⌘G to separate them again. These actions also appear in the context menu. Save a named template when you want to reuse a composite. Custom code components can provide separate SwiftUI, Compose and Flutter expressions; the editor does not execute this code.
 
 ## Import existing UI
 

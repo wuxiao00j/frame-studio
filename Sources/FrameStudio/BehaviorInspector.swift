@@ -50,9 +50,6 @@ import StudioCore
             }
         }
         if node.kind == .dateField {TextField("日期 yyyy-MM-dd",text:binding(\.dateValue,node.dateValue ?? "2026-01-01")).textFieldStyle(.roundedBorder)}
-        if node.kind.decomposable {
-            InspectorSection(title:"拆分组合") {Button("拆分为基础组件"){session.decompose(node.id)};Text("分成文字、图标、背景和控件，之后可以逐个调整或保存成自己的组合。").font(.system(size:10)).foregroundStyle(studioMuted)}
-        }
     }
     @ViewBuilder func iconSlot(_ title:String,key:WritableKeyPath<DesignNode,String?>)->some View {
         HStack{if let data=node[keyPath:key]{UploadedIcon(data:data,symbol:"photo",size:24)};Button(title){session.uploadIcon(node.id,slot:key)};if node[keyPath:key] != nil{Button("移除"){session.updateNode(node.id){$0[keyPath:key]=nil}}}}.font(.system(size:10))

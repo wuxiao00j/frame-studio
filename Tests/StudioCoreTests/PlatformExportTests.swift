@@ -29,7 +29,7 @@ final class PlatformExportTests:XCTestCase {
         var p=DesignProject.demo();p.pages[0].nodes.append(DesignNode(kind:.custom))
         for format in [ExportFormat.flutter,.android] {
             let out=try DesignExporter.export(p,format:format,to:dir)
-            XCTAssertEqual(try ProjectStore.load(out.appendingPathComponent("Design.framestudio")),p)
+            XCTAssertEqual(try ProjectStore.load(out.appendingPathComponent("Design.framestudio")),SharedTabBar.normalized(p))
             let report=try String(contentsOf:out.appendingPathComponent("EXPORT_REPORT.md"),encoding:.utf8)
             XCTAssertTrue(report.contains("自定义组件：1"))
             let path=format == .flutter ? "android/gradle/wrapper/gradle-wrapper.jar" : "gradle/wrapper/gradle-wrapper.jar"

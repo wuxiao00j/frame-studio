@@ -19,5 +19,7 @@ jobs:
         run: python3 scripts/typecheck-swiftui.py
       - name: Rich component acceptance
         run: python3 scripts/test-rich-design.py
+      - name: Shared Tab and decomposition acceptance
+        run: python3 scripts/test-shared-tabs.py
       - name: Public source audit
         run: python3 scripts/audit-release.py --tracked

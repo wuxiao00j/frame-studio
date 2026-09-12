@@ -10,7 +10,7 @@ public enum ProjectStore {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/FrameStudio/Workspace.framestudio")
     }
     public static func load(_ url: URL) throws -> DesignProject {
-        let p=try JSONDecoder().decode(DesignProject.self,from:Data(contentsOf:url)); try validate(p); return p
+        let p=try JSONDecoder().decode(DesignProject.self,from:Data(contentsOf:url)); try validate(p); return SharedTabBar.normalized(p)
     }
     public static func validate(_ p: DesignProject) throws {
         guard p.schemaVersion == 1, !p.pages.isEmpty, p.pages.count <= 200 else { throw StudioError.invalid("项目版本不支持或页面数量无效（1–200）。") }
@@ -51,11 +51,13 @@ public enum ProjectStore {
     }
     @discardableResult public static func save(_ project: DesignProject, to url: URL, expectedRevision: Int?) throws -> DesignProject {
         try withLock(url) {
+            var previous:DesignProject?
             if let expectedRevision, FileManager.default.fileExists(atPath:url.path) {
                 let disk=try load(url)
                 guard disk.revision == expectedRevision, disk.id == project.id else { throw StudioError.conflict }
+                previous=disk
             }
-            var p=project; try validate(p); p.revision += 1
+            var p=project; try validate(p); SharedTabBar.reconcile(&p,before:previous); try validate(p); p.revision += 1
             let enc=JSONEncoder(); enc.outputFormatting=[.prettyPrinted,.sortedKeys,.withoutEscapingSlashes]
             try enc.encode(p).write(to:url,options:.atomic)
             return p
@@ -65,7 +67,8 @@ public enum ProjectStore {
         try withLock(url) {
             var p=try load(url)
             if let expectedRevision, p.revision != expectedRevision { throw StudioError.conflict }
-            try mutation(&p); try validate(p); p.revision += 1
+            let before=p
+            try mutation(&p); try validate(p); SharedTabBar.reconcile(&p,before:before); try validate(p); p.revision += 1
             let enc=JSONEncoder(); enc.outputFormatting=[.prettyPrinted,.sortedKeys,.withoutEscapingSlashes]
             try enc.encode(p).write(to:url,options:.atomic); return p
         }

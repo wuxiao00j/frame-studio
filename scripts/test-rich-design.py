@@ -24,7 +24,8 @@ icon=str(root/'Resources/AppIcon.iconset/icon_32x32.png')
 design=tool('import_icon',{'nodeID':toggle,'path':icon,'expectedRevision':design['revision']})
 assert design['pages'][-1]['nodes'][-1]['iconData']
 progress=add('progress',{'progressStyle':'circular','progressLabel':'fraction','progressCurrent':25,'progressTotal':80,'frames':{'standardPortrait':{'x':24,'y':550,'width':100,'height':100}}})
-tab=add('tabBar',{'items':[{'id':'home-item','title':'首页','symbol':'house','selectedSymbol':'house.fill','pageID':design['pages'][0]['id']}]})
+tab=add('tabBar')
+design=tool('update_component',{'nodeID':tab,'expectedRevision':design['revision'],'properties':{'items':[{'id':'home-item','title':'首页','symbol':'house','selectedSymbol':'house.fill','pageID':design['pages'][0]['id']}]}})
 design=tool('import_icon',{'nodeID':tab,'itemID':'home-item','path':icon,'selected':True,'expectedRevision':design['revision']})
 assert design['pages'][-1]['nodes'][-1]['items'][0]['selectedIconData']
 design=tool('create_component_template',{'pageID':page,'nodeIDs':[rows[0],toggle],'name':'通知组合','expectedRevision':design['revision']})
@@ -34,6 +35,7 @@ assert min(n['frames']['standardPortrait']['y'] for n in design['pages'][-1]['no
 profile=add('profileRow',{'showQRCode':False,'showChevron':False,'frames':{'standardPortrait':{'x':24,'y':1650,'width':345,'height':100}}})
 before=len(design['pages'][-1]['nodes']);design=tool('decompose_component',{'nodeID':profile,'expectedRevision':design['revision']})
 assert len(design['pages'][-1]['nodes'])>before
+assert all(not n['groupID'] for n in design['pages'][-1]['nodes'][before-1:])
 assert not any(n['id']==profile for n in design['pages'][-1]['nodes'])
 source=folder/'Legacy.dart';source.write_text("import 'package:flutter/material.dart'; Widget build() => Column(children: [SwitchListTile(title: Text('通知'), value:true, onChanged:(_){}), CircularProgressIndicator(value:0.6), AwesomeNebulaPanel()]);")
 report=tool('inspect_ui_project',{'path':str(source)})

@@ -179,7 +179,7 @@ public struct DesignNode: Codable, Equatable, Identifiable, Sendable {
         case .slider: r.width=300; r.height=40; fill="FFFFFF00"
         case .segmented: r.width=345; r.height=38; items=[.init(title:"全部",symbol:""),.init(title:"收藏",symbol:"")]
         case .custom: text="自定义 SwiftUI"; r.width=200; r.height=100; borderWidth=1
-        case .backButton: text="返回"; symbol="chevron.left"; fill="FFFFFF00"; r.width=80; r.height=44
+        case .backButton: text="返回"; symbol="chevron.left"; fill="FFFFFF00"; r=Rect(16,52,80,44); anchor = .topLeft; fixedToViewport=true
         case .iconLabel: text="图文标签"; fill="FFFFFF00"; r.width=180; r.height=36; showIcon=true
         case .textButton: text="了解更多"; fill="FFFFFF00"; foreground="7560D4"; showIcon=false; r.width=140; r.height=44
         case .outlinedButton: text="次要操作"; fill="FFFFFF00"; borderWidth=1; borderColor="7560D4"; foreground="7560D4"; showIcon=false; r.width=200; r.height=48

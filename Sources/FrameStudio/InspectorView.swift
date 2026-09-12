@@ -52,6 +52,18 @@ import StudioCore
     func rectBinding(_ key:WritableKeyPath<Rect,Double>)->Binding<Double>{Binding(get:{node.frame(session.variant,device:session.project.device)[keyPath:key]},set:{value in session.updateNode(node.id){var r=$0.frame(session.variant,device:session.project.device);r[keyPath:key]=value;$0.frames[session.variant.rawValue]=r}})}
     var body:some View {
         InspectorSection(title:node.kind.title){TextField("图层名称",text:binding(\.name)).textFieldStyle(.roundedBorder)}
+        InspectorSection(title:"组合与拆分") {
+            HStack {
+                Button("组合选中",action:session.group).disabled(session.selection.count<2)
+                Button("解除组合",action:session.ungroup).disabled(!session.page.nodes.contains{session.selection.contains($0.id) && !$0.groupID.isEmpty})
+            }
+            if node.kind.decomposable {Button("拆分为基础组件"){session.decompose(node.id)}}
+            Text("Shift 点击多选 · ⌘G 组合 · ⇧⌘G 解组\n拆分后可直接逐项编辑，再多选重新组合。").foregroundStyle(studioMuted)
+        }.font(.system(size:10))
+        if node.kind == .tabBar {
+            Text("项目共用 Tab 栏：所有已有 Tab 的页面同步项目、图标、样式和对应屏幕的位置尺寸。当前页面的选中高亮独立显示。")
+                .font(.system(size:10)).foregroundStyle(studioAccent)
+        }
         InspectorSection(title:"对齐与分布"){
             HStack(spacing:0){alignButton("left","align.horizontal.left");alignButton("centerX","align.horizontal.center");alignButton("right","align.horizontal.right");alignButton("top","align.vertical.top");alignButton("centerY","align.vertical.center");alignButton("bottom","align.vertical.bottom")}
             HStack{Button("水平等距"){session.align("distributeX")};Button("垂直等距"){session.align("distributeY")}}.font(.system(size:10)).disabled(session.selection.count<3)
@@ -90,7 +102,6 @@ import StudioCore
         if node.kind == .custom {InspectorSection(title:"SwiftUI 视图表达式") {TextEditor(text:binding(\.customCode)).font(.system(size:10,design:.monospaced)).frame(height:130).border(studioLine);Text("Flutter Widget 表达式").font(.caption);TextEditor(text:Binding(get:{node.flutterCode ?? ""},set:{v in session.updateNode(node.id){$0.flutterCode=v}})).font(.system(size:10,design:.monospaced)).frame(height:90).border(studioLine);Text("Android Compose 内容").font(.caption);TextEditor(text:Binding(get:{node.composeCode ?? ""},set:{v in session.updateNode(node.id){$0.composeCode=v}})).font(.system(size:10,design:.monospaced)).frame(height:90).border(studioLine);Text("仅输入 View 表达式。编辑器不执行代码，导出后由 Xcode 编译。").font(.system(size:9)).foregroundStyle(studioMuted)}}
         InspectorSection(title:"图层操作"){
             HStack{Button("置顶"){session.reorder(front:true)};Button("置底"){session.reorder(front:false)};Button("复制",action:session.duplicate)}
-            HStack{Button("组合",action:session.group).disabled(session.selection.count<2);Button("取消组合",action:session.ungroup)}
             Button("创建组合组件…",action:session.saveTemplate)
             HStack{Toggle("锁定",isOn:binding(\.locked));Toggle("隐藏",isOn:binding(\.hidden))}
             Button("删除选中组件",role:.destructive,action:session.deleteSelection)
@@ -125,18 +136,29 @@ import StudioCore
     func binding<T>(_ id:String,_ key:WritableKeyPath<NavigationItem,T>)->Binding<T>{Binding(get:{session.page.nodes.first{$0.id==node.id}?.items.first{$0.id==id}?[keyPath:key] ?? node.items.first{$0.id==id}![keyPath:key]},set:{v in session.updateNode(node.id){n in if let i=n.items.firstIndex(where:{$0.id==id}){n.items[i][keyPath:key]=v}}})}
     var body:some View {
         InspectorSection(title:"导航 / 选项项目") {
-            if node.kind == .tabBar {Toggle("图标同步到其他页面的 Tab 栏",isOn:Binding(get:{node.syncTabIcons ?? true},set:{value in session.updateNode(node.id){$0.syncTabIcons=value}})).font(.system(size:10))}
+            if node.kind == .tabBar {Text("修改任意 Tab 项，自动同步到所有已有 Tab 栏的页面。").foregroundStyle(studioMuted)}
             ForEach(node.items){item in
                 VStack(spacing:8) {
                     HStack{TextField("名称",text:binding(item.id,\.title)).textFieldStyle(.roundedBorder);Button{session.updateNode(node.id){$0.items.removeAll{$0.id==item.id}}}label:{Image(systemName:"minus.circle")}.buttonStyle(.plain)}
                     itemIcon(item,selected:false)
                     if node.kind == .tabBar {itemIcon(item,selected:true)}
                     Picker("对应页面",selection:binding(item.id,\.pageID)){Text("未绑定").tag("");ForEach(session.project.pages){Text($0.name).tag($0.id)}}
+                    HStack {
+                        Button("上移"){move(item.id,by:-1)}.disabled(node.items.first?.id==item.id)
+                        Button("下移"){move(item.id,by:1)}.disabled(node.items.last?.id==item.id)
+                        Spacer()
+                    }
                 }.font(.system(size:10)).padding(9).background(Color(hex:"F8F7FB"),in:RoundedRectangle(cornerRadius:8))
             }
             Button("添加导航项目"){session.updateNode(node.id){$0.items.append(NavigationItem(title:"新项目",symbol:"star"))}}
         }.font(.system(size:10))
         .sheet(item:$target){t in SymbolPicker(symbol:Binding(get:{let item=session.page.nodes.first{$0.id==node.id}?.items.first{$0.id==t.itemID};return t.selected ? (item?.selectedSymbol ?? item?.symbol ?? "star") : (item?.symbol ?? "star")},set:{symbol in session.updateNode(node.id){n in if let i=n.items.firstIndex(where:{$0.id==t.itemID}){if t.selected{n.items[i].selectedSymbol=symbol;n.items[i].selectedIconData=nil}else{n.items[i].symbol=symbol;n.items[i].iconData=nil}}}}))}
+    }
+    func move(_ id:String,by offset:Int) {
+        session.updateNode(node.id){n in
+            guard let index=n.items.firstIndex(where:{$0.id==id}),n.items.indices.contains(index+offset) else{return}
+            n.items.swapAt(index,index+offset)
+        }
     }
     func itemIcon(_ item:NavigationItem,selected:Bool)->some View {
         HStack(spacing:6) {

@@ -12,6 +12,8 @@ private final class ExportResourceMarker:NSObject {}
 
 public enum DesignExporter {
     public static func export(_ project:DesignProject,format:ExportFormat,to directory:URL)throws->URL {
+        try ProjectStore.validate(project)
+        let project=SharedTabBar.normalized(project)
         if format == .swiftui{return try SwiftExporter.export(project,to:directory)}
         try ProjectStore.validate(project)
         let date=ISO8601DateFormatter().string(from:Date()).replacingOccurrences(of:":",with:"-")

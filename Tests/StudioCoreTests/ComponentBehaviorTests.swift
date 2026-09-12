@@ -42,6 +42,7 @@ final class ComponentBehaviorTests:XCTestCase {
         var profile=DesignNode(kind:.profileRow);profile.showQRCode=false
         let parts=ComponentAssembly.decompose(profile,device:DeviceProfile())
         XCTAssertFalse(parts.contains{$0.kind == .qrCode})
+        XCTAssertTrue(parts.allSatisfy{$0.groupID.isEmpty})
         XCTAssertTrue(parts.contains{$0.kind == .avatar});XCTAssertEqual(parts.filter{$0.kind == .text}.count,2)
         let template=ComponentTemplate(name:"我的资料卡",nodes:parts)
         let inserted=ComponentAssembly.instantiate(template,origin:Rect(40,1200),variant:.standardPortrait,device:DeviceProfile(),pages:[])
@@ -67,10 +68,11 @@ final class ComponentBehaviorTests:XCTestCase {
     func testTabIconUpdatesFollowDestinationAcrossPages() {
         var p=DesignProject.demo()
         let index=p.pages[0].nodes.firstIndex{$0.kind == .tabBar}!
+        let previous=p
         let before=p.pages[0].nodes[index]
         var after=before;after.items[2].selectedSymbol="star.fill";after.items[2].iconData="YWJj"
         p.pages[0].nodes[index]=after
-        ComponentAssembly.syncTabIcons(before:before,after:after,project:&p)
+        SharedTabBar.reconcile(&p,before:previous)
         for page in p.pages {let tab=page.nodes.first{$0.kind == .tabBar}!;XCTAssertEqual(tab.items[2].selectedSymbol,"star.fill");XCTAssertEqual(tab.items[2].iconData,"YWJj")}
     }
 

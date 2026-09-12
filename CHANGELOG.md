@@ -1,5 +1,15 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.3 — 2026-09-12
+
+项目内已有 Tab 栏共用全部配置：修改任意页面的项目、排序、图标、样式和对应屏幕的布局会自动同步。新 Tab 继承现有配置，旧设计读取时统一；六种布局独立，页面高亮按当前目标显示。编辑器、MCP、撤销重做和三平台源码导出使用同一规则。
+
+返回按钮默认固定在左上角。拆分预置组件后自动解组，保留布局；可逐项编辑、Shift 多选重新组合或解组，属性面板与右键菜单提供直接入口。新增 Tab 排序按钮与回归验证。
+
+Existing Tab bars now share their complete configuration across the project, including items, order, icons, styling and corresponding screen layouts. New Tabs inherit the configuration; legacy designs normalize on read. Six variants remain independent and each page highlights its current destination. Editor, MCP, undo/redo and all three source exporters follow the same rule.
+
+Back buttons default to a pinned top-left position. Decomposing presets automatically ungroups their layers while preserving layout. Edit layers individually, Shift-select to regroup or ungroup, and use the inspector or context-menu actions. Added Tab reordering and regression coverage.
+
 ## 1.2.0-beta.2 — 2026-09-12
 
 修复旧版 Xcode 构建时的 SwiftUI 主线程隔离声明和尺寸类型推断问题。UI 源码导出约定及 Beta.1 功能保持一致。

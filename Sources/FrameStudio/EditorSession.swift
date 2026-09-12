@@ -63,6 +63,7 @@ import StudioCore
     func change(_ body:(inout DesignProject)->Void) {
         let before=project
         body(&project)
+        SharedTabBar.reconcile(&project,before:before)
         guard before != project else { return }
         if propertyGesture{return}
         do {
@@ -87,11 +88,11 @@ import StudioCore
         pageID=id;selection=[];sidebarOpen=false;scrollOffsets=[:]
     }
     func select(_ node:DesignNode,additive:Bool=false) {
-        if additive {if selection.contains(node.id){selection.remove(node.id)}else{selection.insert(node.id)}} else if !selection.contains(node.id){selection=[node.id]}
+        if additive {if selection.contains(node.id){selection.remove(node.id)}else{selection.insert(node.id)}} else {selection=[node.id]}
         if !node.groupID.isEmpty && !additive {selection=Set(page.nodes.filter{$0.groupID==node.groupID}.map(\.id))}
     }
     func updateNode(_ id:String,body:(inout DesignNode)->Void) {
-        change { p in guard let pi=p.pages.firstIndex(where:{$0.id==pageID}),let ni=p.pages[pi].nodes.firstIndex(where:{$0.id==id}) else{return};let before=p.pages[pi].nodes[ni];body(&p.pages[pi].nodes[ni]);let after=p.pages[pi].nodes[ni];ComponentAssembly.syncTabIcons(before:before,after:after,project:&p) }
+        change { p in guard let pi=p.pages.firstIndex(where:{$0.id==pageID}),let ni=p.pages[pi].nodes.firstIndex(where:{$0.id==id}) else{return};body(&p.pages[pi].nodes[ni]) }
     }
     func add(_ kind:ComponentKind,at location:CGPoint?=nil,in target:Variant?=nil) {
         let v=target ?? variant; variant=v
@@ -123,8 +124,8 @@ import StudioCore
     }
     func align(_ mode:String) {change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){LayoutEngine.align(&p.pages[i].nodes,ids:selection,variant:variant,device:p.device,alignment:mode)}}}
     func reorder(front:Bool) {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};let picked=p.pages[i].nodes.filter{selection.contains($0.id)};p.pages[i].nodes.removeAll{selection.contains($0.id)};if front{p.pages[i].nodes += picked}else{p.pages[i].nodes.insert(contentsOf:picked,at:0)}}}
-    func group() {let id=UUID().uuidString;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=id}}}
-    func ungroup() {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=""}}}
+    func group() {guard selection.count>1 else{return};let id=UUID().uuidString;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=id}}}
+    func ungroup() {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=""}};selection=[];status="已解除组合，可逐项编辑"}
     func saveTemplate() {guard !selection.isEmpty else{return};templateName=selection.count==1 ? selected?.name ?? "我的组件" : "我的组合组件";showTemplateComposer=true}
     func confirmTemplate() {
         let nodes=page.nodes.filter{selection.contains($0.id)};guard !nodes.isEmpty else{return}
@@ -139,7 +140,7 @@ import StudioCore
         guard let node=page.nodes.first(where:{$0.id==id}),node.kind.decomposable else{return}
         let parts=ComponentAssembly.decompose(node,device:project.device)
         change{p in if let pi=p.pages.firstIndex(where:{$0.id==pageID}),let ni=p.pages[pi].nodes.firstIndex(where:{$0.id==id}){p.pages[pi].nodes.remove(at:ni);p.pages[pi].nodes.insert(contentsOf:parts,at:ni)}}
-        selection=Set(parts.map(\.id));status="已拆分，可取消组合后逐项编辑"
+        selection=[];status="已拆分并解除组合，点击逐项编辑；Shift 多选后可重新组合"
     }
     func beginPropertyGesture(){guard !dragging else{return};dragging=true;propertyGesture=true;dragSnapshot=project}
     func loadImageData()->String? {
@@ -156,15 +157,17 @@ import StudioCore
         add(kind,at:CGPoint(x:(point.x-frame.minX)/zoom,y:(point.y-frame.minY)/zoom+(DesignNode(kind:kind).isFixed ? 0:(scrollOffsets[hit] ?? 0))),in:hit)
     }
     func beginDrag(_ node:DesignNode,variant v:Variant) {
-        guard !node.locked else{return};variant=v;select(node,additive:NSEvent.modifierFlags.contains(.shift));dragging=true;dragSnapshot=project
+        guard !node.locked else{return};variant=v;if !selection.contains(node.id){select(node,additive:NSEvent.modifierFlags.contains(.shift))};dragging=true;dragSnapshot=project
         dragFrames=Dictionary(uniqueKeysWithValues:page.nodes.filter{selection.contains($0.id) && !$0.locked}.map{($0.id,$0.frame(v,device:project.device))})
     }
     func drag(_ node:DesignNode,translation:CGSize) {
         guard let base=dragFrames[node.id],let pi=project.pages.firstIndex(where:{$0.id==pageID}) else{return}
+        let before=project
         var r=base;r.x += translation.width/zoom;r.y += translation.height/zoom
         let others=page.nodes.filter{!selection.contains($0.id) && !$0.hidden}.map{$0.frame(variant,device:project.device)}
         if snapping {let snap=LayoutEngine.snap(r,others:others,size:project.device.size(variant),threshold:5/zoom,grid:showGrid);r=snap.frame;guideX=snap.vertical;guideY=snap.horizontal}
         for i in project.pages[pi].nodes.indices {let id=project.pages[pi].nodes[i].id;if var original=dragFrames[id]{original.x += r.x-base.x;original.y += r.y-base.y;project.pages[pi].nodes[i].frames[variant.rawValue]=original}}
+        SharedTabBar.reconcile(&project,before:before)
     }
     func finishDrag() {guard dragging else{return};dragging=false;isResizing=false;propertyGesture=false;guideX=nil;guideY=nil;guard let before=dragSnapshot else{return};let after=project;project=before;dragSnapshot=nil;dragFrames=[:];change{$0=after}}
     func beginResize(_ node:DesignNode,variant v:Variant) {
@@ -173,7 +176,9 @@ import StudioCore
     }
     func resize(_ id:String,start:Rect,translation:CGSize) {
         guard isResizing,let pi=project.pages.firstIndex(where:{$0.id==pageID}),let i=project.pages[pi].nodes.firstIndex(where:{$0.id==id}),!project.pages[pi].nodes[i].locked else{return}
+        let before=project
         project.pages[pi].nodes[i].frames[variant.rawValue]=LayoutEngine.resized(start,dx:translation.width/zoom,dy:translation.height/zoom,keepAspect:NSEvent.modifierFlags.contains(.shift))
+        SharedTabBar.reconcile(&project,before:before)
     }
 
     func setWide(_ wide:Bool) {change{$0.wideMode=wide};variant=visibleVariants[0];fitCanvases()}
