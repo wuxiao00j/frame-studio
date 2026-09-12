@@ -1,0 +1,7 @@
+# Merge this section into your existing config; do not replace unrelated settings.
+# 将此节合并到现有配置；不要覆盖其他设置。
+[mcp_servers.frame_studio]
+command = "/Applications/原境 Frame Studio.app/Contents/MacOS/frame-studio-mcp"
+args = []
+# To edit a different document / 指定其他设计文件：
+# args = ["--project", "/absolute/path/Design.framestudio"]

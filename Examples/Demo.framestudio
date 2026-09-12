@@ -1,0 +1,1273 @@
+{
+  "device": {
+    "inner": {
+      "height": 798,
+      "width": 570
+    },
+    "name": "通用阔屏 · 1:1.4",
+    "note": "逻辑设计尺寸，可自定义；不是硬件像素或官方逻辑分辨率。",
+    "outer": {
+      "height": 560,
+      "width": 400
+    },
+    "standard": {
+      "height": 852,
+      "width": 393
+    }
+  },
+  "id": "CEE2EA64-2093-4A6B-9C59-41F028098CF6",
+  "importNotes": [],
+  "name": "Frame Studio Demo",
+  "pages": [
+    {
+      "background": "F8F7FB",
+      "id": "09E9207B-AB49-4A53-8C9E-8294022BD3F5",
+      "name": "灵感首页",
+      "nodes": [
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF00",
+          "fontSize": 20,
+          "fontWeight": "semibold",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 50,
+              "width": 766,
+              "x": 16,
+              "y": 48
+            },
+            "innerPortrait": {
+              "height": 50,
+              "width": 538,
+              "x": 16,
+              "y": 48
+            },
+            "outerLandscape": {
+              "height": 50,
+              "width": 528,
+              "x": 16,
+              "y": 48
+            },
+            "outerPortrait": {
+              "height": 50,
+              "width": 368,
+              "x": 16,
+              "y": 48
+            },
+            "standardLandscape": {
+              "height": 50,
+              "width": 820,
+              "x": 16,
+              "y": 48
+            },
+            "standardPortrait": {
+              "height": 50,
+              "width": 361,
+              "x": 16,
+              "y": 52
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "F5482DC4-4BF8-45BE-8440-CB3283919420",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "navigationBar",
+          "locked": false,
+          "name": "导航栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sidebar.left",
+          "targetPageID": "",
+          "text": "灵感空间",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF00",
+          "fontSize": 28,
+          "fontWeight": "semibold",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 68,
+              "width": 363,
+              "x": 24,
+              "y": 112
+            },
+            "innerPortrait": {
+              "height": 70,
+              "width": 522,
+              "x": 24,
+              "y": 132
+            },
+            "outerLandscape": {
+              "height": 68,
+              "width": 244,
+              "x": 24,
+              "y": 100
+            },
+            "outerPortrait": {
+              "height": 68,
+              "width": 352,
+              "x": 24,
+              "y": 110
+            },
+            "standardLandscape": {
+              "height": 68,
+              "width": 390,
+              "x": 24,
+              "y": 100
+            },
+            "standardPortrait": {
+              "height": 70,
+              "width": 345,
+              "x": 24,
+              "y": 132
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "4A8E17F4-F4A4-4ABA-854B-162BADBEB4A3",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "text",
+          "locked": false,
+          "name": "文本",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "好设计，\n从一点灵感开始。",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF00",
+          "fontSize": 13,
+          "fontWeight": "semibold",
+          "foreground": "8B879C",
+          "frames": {
+            "innerLandscape": {
+              "height": 20,
+              "width": 363,
+              "x": 24,
+              "y": 190
+            },
+            "innerPortrait": {
+              "height": 24,
+              "width": 522,
+              "x": 24,
+              "y": 214
+            },
+            "outerLandscape": {
+              "height": 20,
+              "width": 244,
+              "x": 24,
+              "y": 174
+            },
+            "outerPortrait": {
+              "height": 24,
+              "width": 352,
+              "x": 24,
+              "y": 184
+            },
+            "standardLandscape": {
+              "height": 20,
+              "width": 390,
+              "x": 24,
+              "y": 174
+            },
+            "standardPortrait": {
+              "height": 24,
+              "width": 340,
+              "x": 24,
+              "y": 214
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "21707C57-1488-413A-8C89-AA3446F3C8A3",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "text",
+          "locked": false,
+          "name": "文本",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "收集想法 · 探索可能 · 自由创造",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "EEEAF8",
+          "fontSize": 20,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 352,
+              "width": 363,
+              "x": 411,
+              "y": 110
+            },
+            "innerPortrait": {
+              "height": 164,
+              "width": 522,
+              "x": 24,
+              "y": 270
+            },
+            "outerLandscape": {
+              "height": 182,
+              "width": 244,
+              "x": 292,
+              "y": 110
+            },
+            "outerPortrait": {
+              "height": 106,
+              "width": 352,
+              "x": 24,
+              "y": 220
+            },
+            "standardLandscape": {
+              "height": 175,
+              "width": 390,
+              "x": 438,
+              "y": 110
+            },
+            "standardPortrait": {
+              "height": 164,
+              "width": 345,
+              "x": 24,
+              "y": 270
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "CE42CA34-445B-498A-A46A-B96AF2C5FF3B",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "card",
+          "locked": false,
+          "name": "内容卡片",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "让每一个想法，都找到自己的形状。",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "今天，想创造什么？",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "7560D4",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "FFFFFF",
+          "frames": {
+            "innerLandscape": {
+              "height": 46,
+              "width": 363,
+              "x": 24,
+              "y": 420
+            },
+            "innerPortrait": {
+              "height": 50,
+              "width": 522,
+              "x": 24,
+              "y": 454
+            },
+            "outerLandscape": {
+              "height": 40,
+              "width": 244,
+              "x": 24,
+              "y": 264
+            },
+            "outerPortrait": {
+              "height": 44,
+              "width": 352,
+              "x": 24,
+              "y": 346
+            },
+            "standardLandscape": {
+              "height": 40,
+              "width": 390,
+              "x": 24,
+              "y": 257
+            },
+            "standardPortrait": {
+              "height": 50,
+              "width": 345,
+              "x": 24,
+              "y": 454
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "37FFA2B1-3C1D-40B5-96E6-E7959C945013",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "button",
+          "locked": false,
+          "name": "按钮",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "990636A7-DF1B-461C-9778-42E3E2188367",
+          "text": "开始探索",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 56,
+              "width": 363,
+              "x": 24,
+              "y": 230
+            },
+            "innerPortrait": {
+              "height": 72,
+              "width": 522,
+              "x": 24,
+              "y": 532
+            },
+            "outerLandscape": {
+              "height": 56,
+              "width": 244,
+              "x": 24,
+              "y": 200
+            },
+            "outerPortrait": {
+              "height": 52,
+              "width": 352,
+              "x": 24,
+              "y": 404
+            },
+            "standardLandscape": {
+              "height": 56,
+              "width": 390,
+              "x": 24,
+              "y": 193
+            },
+            "standardPortrait": {
+              "height": 72,
+              "width": 345,
+              "x": 24,
+              "y": 532
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "B8A62EFA-30A9-48AF-A4DA-8AF49D0699D1",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "listRow",
+          "locked": false,
+          "name": "列表行",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "把喜欢的事物留在这里",
+          "symbol": "bookmark",
+          "targetPageID": "574EC2BC-E9AC-4D92-9347-F3E08AE557F8",
+          "text": "收藏与灵感",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "bottomLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 11,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 64,
+              "width": 774,
+              "x": 12,
+              "y": 482
+            },
+            "innerPortrait": {
+              "height": 64,
+              "width": 546,
+              "x": 12,
+              "y": 710
+            },
+            "outerLandscape": {
+              "height": 64,
+              "width": 536,
+              "x": 12,
+              "y": 312
+            },
+            "outerPortrait": {
+              "height": 64,
+              "width": 376,
+              "x": 12,
+              "y": 472
+            },
+            "standardLandscape": {
+              "height": 64,
+              "width": 828,
+              "x": 12,
+              "y": 305
+            },
+            "standardPortrait": {
+              "height": 64,
+              "width": 369,
+              "x": 12,
+              "y": 764
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "6580D807-2C27-444F-973B-359C9C167A29",
+          "imageData": "",
+          "isOn": true,
+          "items": [
+            {
+              "id": "DDA99E32-D6CC-4A9E-A950-413F7C7C6F53",
+              "pageID": "09E9207B-AB49-4A53-8C9E-8294022BD3F5",
+              "symbol": "square.grid.2x2",
+              "title": "发现"
+            },
+            {
+              "id": "01ED21DE-B8E8-4914-A031-B3F770A55A0E",
+              "pageID": "990636A7-DF1B-461C-9778-42E3E2188367",
+              "symbol": "bubble.left.and.bubble.right",
+              "title": "对话"
+            },
+            {
+              "id": "4FB7FEF2-AA6F-4F43-B56D-4A469438A087",
+              "pageID": "574EC2BC-E9AC-4D92-9347-F3E08AE557F8",
+              "symbol": "person.crop.circle",
+              "title": "我的"
+            }
+          ],
+          "kind": "tabBar",
+          "locked": false,
+          "name": "Tab 栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 8,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "Tab 栏",
+          "textAlignment": "leading",
+          "value": 0.65
+        }
+      ]
+    },
+    {
+      "background": "F8F7FB",
+      "id": "990636A7-DF1B-461C-9778-42E3E2188367",
+      "name": "对话",
+      "nodes": [
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF00",
+          "fontSize": 20,
+          "fontWeight": "semibold",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 50,
+              "width": 766,
+              "x": 16,
+              "y": 48
+            },
+            "innerPortrait": {
+              "height": 50,
+              "width": 538,
+              "x": 16,
+              "y": 48
+            },
+            "outerLandscape": {
+              "height": 50,
+              "width": 528,
+              "x": 16,
+              "y": 48
+            },
+            "outerPortrait": {
+              "height": 50,
+              "width": 368,
+              "x": 16,
+              "y": 48
+            },
+            "standardLandscape": {
+              "height": 50,
+              "width": 820,
+              "x": 16,
+              "y": 48
+            },
+            "standardPortrait": {
+              "height": 50,
+              "width": 361,
+              "x": 16,
+              "y": 52
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "662D5B88-C0C9-492B-B626-34E32AEC6C73",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "navigationBar",
+          "locked": false,
+          "name": "导航栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sidebar.left",
+          "targetPageID": "",
+          "text": "对话",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "F0EEF5",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 44,
+              "width": 363,
+              "x": 24,
+              "y": 114
+            },
+            "innerPortrait": {
+              "height": 44,
+              "width": 522,
+              "x": 24,
+              "y": 128
+            },
+            "outerLandscape": {
+              "height": 44,
+              "width": 244,
+              "x": 24,
+              "y": 114
+            },
+            "outerPortrait": {
+              "height": 44,
+              "width": 352,
+              "x": 24,
+              "y": 128
+            },
+            "standardLandscape": {
+              "height": 44,
+              "width": 390,
+              "x": 24,
+              "y": 114
+            },
+            "standardPortrait": {
+              "height": 44,
+              "width": 345,
+              "x": 24,
+              "y": 128
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "53EDC109-83FD-465D-9183-1F8B8355DA91",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "searchField",
+          "locked": false,
+          "name": "搜索栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "magnifyingglass",
+          "targetPageID": "",
+          "text": "搜索对话",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "EEEAF8",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 350,
+              "width": 363,
+              "x": 411,
+              "y": 114
+            },
+            "innerPortrait": {
+              "height": 180,
+              "width": 522,
+              "x": 24,
+              "y": 198
+            },
+            "outerLandscape": {
+              "height": 180,
+              "width": 244,
+              "x": 292,
+              "y": 114
+            },
+            "outerPortrait": {
+              "height": 180,
+              "width": 352,
+              "x": 24,
+              "y": 198
+            },
+            "standardLandscape": {
+              "height": 173,
+              "width": 390,
+              "x": 438,
+              "y": 114
+            },
+            "standardPortrait": {
+              "height": 180,
+              "width": 345,
+              "x": 24,
+              "y": 198
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "4E795A62-FF3B-4EC4-8569-39F4CBA4B41B",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "card",
+          "locked": false,
+          "name": "内容卡片",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "在这里搭建你的 AI 对话体验。",
+          "symbol": "bubble.left.and.text.bubble.right",
+          "targetPageID": "",
+          "text": "有什么可以帮你？",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "bottomLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 11,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 64,
+              "width": 774,
+              "x": 12,
+              "y": 482
+            },
+            "innerPortrait": {
+              "height": 64,
+              "width": 546,
+              "x": 12,
+              "y": 710
+            },
+            "outerLandscape": {
+              "height": 64,
+              "width": 536,
+              "x": 12,
+              "y": 312
+            },
+            "outerPortrait": {
+              "height": 64,
+              "width": 376,
+              "x": 12,
+              "y": 472
+            },
+            "standardLandscape": {
+              "height": 64,
+              "width": 828,
+              "x": 12,
+              "y": 305
+            },
+            "standardPortrait": {
+              "height": 64,
+              "width": 369,
+              "x": 12,
+              "y": 764
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "E3ADCC6E-6068-4290-95F6-2BDFC83FE51C",
+          "imageData": "",
+          "isOn": true,
+          "items": [
+            {
+              "id": "DDA99E32-D6CC-4A9E-A950-413F7C7C6F53",
+              "pageID": "09E9207B-AB49-4A53-8C9E-8294022BD3F5",
+              "symbol": "square.grid.2x2",
+              "title": "发现"
+            },
+            {
+              "id": "01ED21DE-B8E8-4914-A031-B3F770A55A0E",
+              "pageID": "990636A7-DF1B-461C-9778-42E3E2188367",
+              "symbol": "bubble.left.and.bubble.right",
+              "title": "对话"
+            },
+            {
+              "id": "4FB7FEF2-AA6F-4F43-B56D-4A469438A087",
+              "pageID": "574EC2BC-E9AC-4D92-9347-F3E08AE557F8",
+              "symbol": "person.crop.circle",
+              "title": "我的"
+            }
+          ],
+          "kind": "tabBar",
+          "locked": false,
+          "name": "Tab 栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 8,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "Tab 栏",
+          "textAlignment": "leading",
+          "value": 0.65
+        }
+      ]
+    },
+    {
+      "background": "F8F7FB",
+      "id": "574EC2BC-E9AC-4D92-9347-F3E08AE557F8",
+      "name": "我的",
+      "nodes": [
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF00",
+          "fontSize": 20,
+          "fontWeight": "semibold",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 50,
+              "width": 766,
+              "x": 16,
+              "y": 48
+            },
+            "innerPortrait": {
+              "height": 50,
+              "width": 538,
+              "x": 16,
+              "y": 48
+            },
+            "outerLandscape": {
+              "height": 50,
+              "width": 528,
+              "x": 16,
+              "y": 48
+            },
+            "outerPortrait": {
+              "height": 50,
+              "width": 368,
+              "x": 16,
+              "y": 48
+            },
+            "standardLandscape": {
+              "height": 50,
+              "width": 820,
+              "x": 16,
+              "y": 48
+            },
+            "standardPortrait": {
+              "height": 50,
+              "width": 361,
+              "x": 16,
+              "y": 52
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "E5350AA1-B083-460F-88DC-C929D2DF6AEB",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "navigationBar",
+          "locked": false,
+          "name": "导航栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sidebar.left",
+          "targetPageID": "",
+          "text": "我的",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 100,
+              "width": 363,
+              "x": 24,
+              "y": 112
+            },
+            "innerPortrait": {
+              "height": 114,
+              "width": 522,
+              "x": 24,
+              "y": 124
+            },
+            "outerLandscape": {
+              "height": 100,
+              "width": 244,
+              "x": 24,
+              "y": 112
+            },
+            "outerPortrait": {
+              "height": 114,
+              "width": 352,
+              "x": 24,
+              "y": 124
+            },
+            "standardLandscape": {
+              "height": 100,
+              "width": 390,
+              "x": 24,
+              "y": 112
+            },
+            "standardPortrait": {
+              "height": 114,
+              "width": 361,
+              "x": 16,
+              "y": 124
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "DBD3B5E4-EB7A-4ED4-BEB2-0AC83B028E98",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "profileRow",
+          "locked": false,
+          "name": "个人资料栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "账号：designer_demo",
+          "symbol": "person.fill",
+          "targetPageID": "",
+          "text": "设计师",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 68,
+              "width": 363,
+              "x": 411,
+              "y": 112
+            },
+            "innerPortrait": {
+              "height": 68,
+              "width": 522,
+              "x": 24,
+              "y": 264
+            },
+            "outerLandscape": {
+              "height": 68,
+              "width": 244,
+              "x": 292,
+              "y": 112
+            },
+            "outerPortrait": {
+              "height": 68,
+              "width": 352,
+              "x": 24,
+              "y": 264
+            },
+            "standardLandscape": {
+              "height": 68,
+              "width": 390,
+              "x": 438,
+              "y": 112
+            },
+            "standardPortrait": {
+              "height": 68,
+              "width": 361,
+              "x": 16,
+              "y": 264
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "198E32D5-E0AD-4434-A832-009439162E68",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "listRow",
+          "locked": false,
+          "name": "列表行",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "让空间更适合你",
+          "symbol": "gearshape",
+          "targetPageID": "",
+          "text": "设置",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "topLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 16,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 56,
+              "width": 363,
+              "x": 411,
+              "y": 196
+            },
+            "innerPortrait": {
+              "height": 56,
+              "width": 522,
+              "x": 24,
+              "y": 348
+            },
+            "outerLandscape": {
+              "height": 56,
+              "width": 244,
+              "x": 292,
+              "y": 196
+            },
+            "outerPortrait": {
+              "height": 56,
+              "width": 352,
+              "x": 24,
+              "y": 348
+            },
+            "standardLandscape": {
+              "height": 56,
+              "width": 390,
+              "x": 438,
+              "y": 196
+            },
+            "standardPortrait": {
+              "height": 56,
+              "width": 361,
+              "x": 16,
+              "y": 348
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "8BD87DA3-FEE0-4BF8-B864-39DFEA3CC98A",
+          "imageData": "",
+          "isOn": true,
+          "items": [],
+          "kind": "toggle",
+          "locked": false,
+          "name": "开关",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 0,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "灵感提醒",
+          "textAlignment": "leading",
+          "value": 0.65
+        },
+        {
+          "accent": "7560D4",
+          "anchor": "bottomLeft",
+          "avatarSize": 58,
+          "borderColor": "E8E5F0",
+          "borderWidth": 0,
+          "cornerRadius": 14,
+          "customCode": "Text(\"自定义 SwiftUI\")",
+          "fill": "FFFFFF",
+          "fontSize": 11,
+          "fontWeight": "regular",
+          "foreground": "252336",
+          "frames": {
+            "innerLandscape": {
+              "height": 64,
+              "width": 774,
+              "x": 12,
+              "y": 482
+            },
+            "innerPortrait": {
+              "height": 64,
+              "width": 546,
+              "x": 12,
+              "y": 710
+            },
+            "outerLandscape": {
+              "height": 64,
+              "width": 536,
+              "x": 12,
+              "y": 312
+            },
+            "outerPortrait": {
+              "height": 64,
+              "width": 376,
+              "x": 12,
+              "y": 472
+            },
+            "standardLandscape": {
+              "height": 64,
+              "width": 828,
+              "x": 12,
+              "y": 305
+            },
+            "standardPortrait": {
+              "height": 64,
+              "width": 369,
+              "x": 12,
+              "y": 764
+            }
+          },
+          "groupID": "",
+          "hidden": false,
+          "iconSize": 22,
+          "id": "54C8B12F-C125-4E2B-9426-773AB8432773",
+          "imageData": "",
+          "isOn": true,
+          "items": [
+            {
+              "id": "DDA99E32-D6CC-4A9E-A950-413F7C7C6F53",
+              "pageID": "09E9207B-AB49-4A53-8C9E-8294022BD3F5",
+              "symbol": "square.grid.2x2",
+              "title": "发现"
+            },
+            {
+              "id": "01ED21DE-B8E8-4914-A031-B3F770A55A0E",
+              "pageID": "990636A7-DF1B-461C-9778-42E3E2188367",
+              "symbol": "bubble.left.and.bubble.right",
+              "title": "对话"
+            },
+            {
+              "id": "4FB7FEF2-AA6F-4F43-B56D-4A469438A087",
+              "pageID": "574EC2BC-E9AC-4D92-9347-F3E08AE557F8",
+              "symbol": "person.crop.circle",
+              "title": "我的"
+            }
+          ],
+          "kind": "tabBar",
+          "locked": false,
+          "name": "Tab 栏",
+          "opacity": 1,
+          "padding": 16,
+          "rotation": 0,
+          "shadow": 8,
+          "sourceReference": "",
+          "spacing": 12,
+          "subtitle": "",
+          "symbol": "sparkles",
+          "targetPageID": "",
+          "text": "Tab 栏",
+          "textAlignment": "leading",
+          "value": 0.65
+        }
+      ]
+    }
+  ],
+  "revision": 2,
+  "schemaVersion": 1,
+  "templates": [],
+  "wideMode": false
+}

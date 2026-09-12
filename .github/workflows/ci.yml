@@ -1,0 +1,23 @@
+name: Source and MCP checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core tests
+        run: swift test
+      - name: MCP acceptance
+        run: python3 scripts/test-mcp.py
+      - name: UI source export acceptance
+        run: python3 scripts/test-platform-exports.py
+      - name: Exported SwiftUI type check
+        run: python3 scripts/typecheck-swiftui.py
+      - name: Rich component acceptance
+        run: python3 scripts/test-rich-design.py
+      - name: Public source audit
+        run: python3 scripts/audit-release.py --tracked

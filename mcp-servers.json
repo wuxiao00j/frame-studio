@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "frame_studio": {
+      "command": "/Applications/原境 Frame Studio.app/Contents/MacOS/frame-studio-mcp",
+      "args": []
+    }
+  }
+}

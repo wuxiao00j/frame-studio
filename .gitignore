@@ -1,0 +1,28 @@
+# Local build and acceptance artifacts
+.build/
+.artifacts/
+dist/
+.swiftpm/
+.DS_Store
+*.lock
+*.xcuserstate
+xcuserdata/
+# Never publish mobile application packages or signing data
+*.apk
+*.aab
+*.ipa
+*.dmg
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.app/
+local.properties
+.env
+.env.*
+# Only the freshly generated, generic demo is distributable
+Examples/*
+!Examples/Demo.framestudio
+
+__pycache__/
+*.pyc
