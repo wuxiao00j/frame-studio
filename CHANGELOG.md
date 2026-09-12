@@ -1,5 +1,11 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.2 — 2026-09-12
+
+修复旧版 Xcode 构建时的 SwiftUI 主线程隔离声明和尺寸类型推断问题。UI 源码导出约定及 Beta.1 功能保持一致。
+
+Fix explicit main-actor isolation and dimension type inference for source builds with older Xcode versions. The UI-source-only export contract and Beta.1 features are unchanged.
+
 ## 1.2.0-beta.1 — 2026-09-12
 
 ### 中文

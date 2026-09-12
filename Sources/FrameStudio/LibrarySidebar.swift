@@ -1,7 +1,7 @@
 import SwiftUI
 import StudioCore
 
-struct LibrarySidebar:View {
+@MainActor struct LibrarySidebar:View {
     @Bindable var session:EditorSession
     var kinds:[ComponentKind] {ComponentKind.allCases.filter{session.search.isEmpty || $0.title.localizedCaseInsensitiveContains(session.search) || $0.rawValue.localizedCaseInsensitiveContains(session.search)}}
     var body:some View {
@@ -32,19 +32,19 @@ struct LibrarySidebar:View {
         }.frame(width:244).background(.white)
     }
 }
-struct ComponentTile:View {
+@MainActor struct ComponentTile:View {
     @Bindable var session:EditorSession
     let kind:ComponentKind
     let action:()->Void
     @State private var hovering=false
     var body:some View {Button(action:action){VStack(spacing:10){Image(systemName:kind.symbol).font(.system(size:20,weight:.light)).foregroundStyle(hovering ? studioAccent : Color(hex:"777086"));Text(kind.title).font(.system(size:10)).foregroundStyle(studioInk)}.frame(maxWidth:.infinity).frame(height:74).background(hovering ? Color(hex:"F0EBFC") : Color(hex:"FCFBFE"),in:RoundedRectangle(cornerRadius:9)).overlay(RoundedRectangle(cornerRadius:9).stroke(hovering ? studioAccent.opacity(0.4) : studioLine,lineWidth:1))}.buttonStyle(.plain).onHover{hovering=$0}.simultaneousGesture(DragGesture(minimumDistance:5,coordinateSpace:.global).onChanged { gesture in session.paletteKind=kind;session.paletteLocation=gesture.location }.onEnded { gesture in session.dropPalette(kind,at:gesture.location) }).help("拖入画布或点击添加\(kind.title)")}
 }
-struct PageRow:View {
+@MainActor struct PageRow:View {
     @Bindable var session:EditorSession
     let page:DesignPage
     var body:some View {HStack(spacing:10){Image(systemName:session.pageID==page.id ? "doc.fill" : "doc").font(.system(size:12));Text(page.name).font(.system(size:11));Spacer();Text(String(format:"%02d",(session.project.pages.firstIndex{$0.id==page.id} ?? 0)+1)).font(.system(size:9)).opacity(0.5)}.foregroundStyle(session.pageID==page.id ? studioAccent : studioInk).padding(.horizontal,12).frame(height:34).background(session.pageID==page.id ? Color(hex:"F0EBFC") : .clear,in:RoundedRectangle(cornerRadius:7)).contentShape(Rectangle()).onTapGesture{session.selectPage(page.id)}.contextMenu{Button("复制页面"){session.selectPage(page.id);session.duplicatePage()};Button("删除页面",role:.destructive){session.selectPage(page.id);session.deletePage()}.disabled(session.project.pages.count==1)}}
 }
-struct LayerRow:View {
+@MainActor struct LayerRow:View {
     @Bindable var session:EditorSession
     let node:DesignNode
     var body:some View {HStack(spacing:7){Image(systemName:node.kind.symbol).frame(width:20);Text(node.name).lineLimit(1);Spacer(minLength:0);Button{session.updateNode(node.id){$0.hidden.toggle()}}label:{Image(systemName:node.hidden ? "eye.slash" : "eye")};Button{session.updateNode(node.id){$0.locked.toggle()}}label:{Image(systemName:node.locked ? "lock.fill" : "lock.open")}}.font(.system(size:10)).buttonStyle(.plain).foregroundStyle(node.hidden ? studioMuted : studioInk).padding(9).background(session.selection.contains(node.id) ? Color(hex:"F0EBFC") : .clear,in:RoundedRectangle(cornerRadius:6)).contentShape(Rectangle()).onTapGesture{session.select(node,additive:NSEvent.modifierFlags.contains(.shift))}}

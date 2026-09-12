@@ -1,7 +1,7 @@
 import SwiftUI
 import StudioCore
 
-struct UploadedIcon:View {
+@MainActor struct UploadedIcon:View {
     let data:String?
     let symbol:String
     let size:Double
@@ -10,7 +10,7 @@ struct UploadedIcon:View {
         else {Image(systemName:symbol).font(.system(size:size)).frame(width:size,height:size)}
     }
 }
-struct DetailedProgress:View {
+@MainActor struct DetailedProgress:View {
     let node:DesignNode
     var body:some View {
         let thickness=node.progressThickness ?? 6
@@ -34,7 +34,7 @@ struct DetailedProgress:View {
         }
     }
 }
-struct DetailedSwitch:View {
+@MainActor struct DetailedSwitch:View {
     let node:DesignNode
     @Binding var isOn:Bool
     var body:some View {
@@ -48,7 +48,7 @@ struct DetailedSwitch:View {
     }
     var control:some View {Toggle("",isOn:$isOn).toggleStyle(.switch).labelsHidden().fixedSize().tint(Color(hex:node.accent))}
 }
-struct ExtraComponentPreview:View {
+@MainActor struct ExtraComponentPreview:View {
     let node:DesignNode
     let interactive:Bool
     let navigate:(String)->Void

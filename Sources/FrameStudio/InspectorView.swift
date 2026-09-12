@@ -1,18 +1,18 @@
 import SwiftUI
 import StudioCore
 
-struct InspectorView:View {
+@MainActor struct InspectorView:View {
     @Bindable var session:EditorSession
     var body:some View {
         VStack(spacing:0){HStack{Text("设计属性").font(.system(size:12,weight:.semibold));Spacer();Text(session.selection.isEmpty ? "页面" : "\(session.selection.count) 个选中").font(.system(size:10)).foregroundStyle(studioMuted)}.padding(20);Divider();ScrollView{VStack(alignment:.leading,spacing:20){if let node=session.selected{NodeInspector(session:session,node:node)}else{PageInspector(session:session)}}.padding(18)}}.frame(width:276).background(.white)
     }
 }
-struct InspectorSection<Content:View>:View {
+@MainActor struct InspectorSection<Content:View>:View {
     let title:String
     @ViewBuilder let content:()->Content
     var body:some View {VStack(alignment:.leading,spacing:12){Text(title).font(.system(size:10,weight:.semibold)).foregroundStyle(studioMuted);content()}.frame(maxWidth:.infinity,alignment:.leading)}
 }
-struct PageInspector:View {
+@MainActor struct PageInspector:View {
     @Bindable var session:EditorSession
     var body:some View {
         if !session.project.importNotes.isEmpty{Button("查看导入分类 / 未匹配组件"){session.showImportReport=true}.font(.system(size:11))}
@@ -44,7 +44,7 @@ struct PageInspector:View {
         }
     }
 }
-struct NodeInspector:View {
+@MainActor struct NodeInspector:View {
     @Bindable var session:EditorSession
     let node:DesignNode
     @State private var symbolPicker=false
@@ -100,12 +100,12 @@ struct NodeInspector:View {
     }
     func alignButton(_ key:String,_ symbol:String)->some View {Button{session.align(key)}label:{Image(systemName:symbol).frame(maxWidth:.infinity).frame(height:29)}.buttonStyle(.plain).background(Color(hex:"F5F3F9")).help(key).disabled(node.locked)}
 }
-struct NumberField:View {
+@MainActor struct NumberField:View {
     let label:String
     @Binding var value:Double
     var body:some View {HStack(spacing:4){Text(label).foregroundStyle(studioMuted);TextField("",value:$value,format:.number.precision(.fractionLength(0...1))).textFieldStyle(.plain).multilineTextAlignment(.trailing)}.font(.system(size:10)).padding(8).background(Color(hex:"F6F4F9"),in:RoundedRectangle(cornerRadius:6))}
 }
-struct ColorProperty:View {
+@MainActor struct ColorProperty:View {
     let label:String
     @Binding var value:String
     @State private var draft=""
@@ -118,7 +118,7 @@ struct ColorProperty:View {
     }
 }
 
-struct NavigationItemsInspector:View {
+@MainActor struct NavigationItemsInspector:View {
     @Bindable var session:EditorSession
     let node:DesignNode
     @State private var target:ItemIconTarget?
@@ -153,7 +153,7 @@ struct NavigationItemsInspector:View {
 }
 struct ItemIconTarget:Identifiable {let itemID:String;let selected:Bool;var id:String {itemID+String(selected)}}
 
-struct SymbolPicker:View {
+@MainActor struct SymbolPicker:View {
     @Environment(\.dismiss) var dismiss
     @Binding var symbol:String
     @State private var search=""

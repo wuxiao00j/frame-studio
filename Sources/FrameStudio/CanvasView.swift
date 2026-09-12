@@ -2,7 +2,7 @@ import SwiftUI
 import StudioCore
 import UniformTypeIdentifiers
 
-struct CanvasWorkspace:View {
+@MainActor struct CanvasWorkspace:View {
     @Bindable var session:EditorSession
     var body:some View {
         VStack(spacing:0){
@@ -29,7 +29,7 @@ struct CanvasWorkspace:View {
 
     }
 }
-struct ArtboardView:View {
+@MainActor struct ArtboardView:View {
     @Bindable var session:EditorSession
     let variant:Variant
     var size:Dimensions {session.project.device.size(variant)}
@@ -63,12 +63,12 @@ struct ArtboardView:View {
             .scaleEffect(zoom,anchor:.topLeading)
             .frame(width:size.width*zoom,height:size.height*zoom,alignment:.topLeading)
             .background(GeometryReader { proxy in Color.clear.onAppear {session.boardFrames[variant]=proxy.frame(in:.global)}.onChange(of:proxy.frame(in:.global)) {_,frame in session.boardFrames[variant]=frame} })
-            .onDrop(of:[UTType.text],delegate:CanvasDropDelegate(session:session,variant:variant))
+            .onDrop(of:[UTType.text],delegate:CanvasDropDelegate(session:session,variant:variant,canEdit:!session.preview))
         }
         .onTapGesture{session.variant=variant}
     }
 }
-struct CanvasNode:View {
+@MainActor struct CanvasNode:View {
     @Bindable var session:EditorSession
     let node:DesignNode
     let variant:Variant
@@ -107,7 +107,7 @@ struct CanvasNode:View {
             .position(x:rect.midX,y:rect.midY)
     }
 }
-struct SidebarOverlay:View {
+@MainActor struct SidebarOverlay:View {
     let session:EditorSession
     let size:Dimensions
     var body:some View {
@@ -118,13 +118,14 @@ struct SidebarOverlay:View {
 struct CanvasDropDelegate:DropDelegate {
     let session:EditorSession
     let variant:Variant
-    func validateDrop(info:DropInfo)->Bool { !session.preview && info.hasItemsConforming(to:[UTType.text]) }
+    let canEdit:Bool
+    func validateDrop(info:DropInfo)->Bool { canEdit && info.hasItemsConforming(to:[UTType.text]) }
     func performDrop(info:DropInfo)->Bool {
-        guard !session.preview,let provider=info.itemProviders(for:[UTType.text]).first else {return false}
+        guard canEdit,let provider=info.itemProviders(for:[UTType.text]).first else {return false}
         let location=info.location
         provider.loadObject(ofClass:NSString.self) { object, _ in
             guard let raw=object as? String, let kind=ComponentKind(rawValue:raw) else{return}
-            Task { @MainActor in session.add(kind,at:CGPoint(x:location.x/session.zoom,y:location.y/session.zoom),in:variant) }
+            Task { @MainActor in guard !session.preview else{return};session.add(kind,at:CGPoint(x:location.x/session.zoom,y:location.y/session.zoom),in:variant) }
         }
         return true
     }

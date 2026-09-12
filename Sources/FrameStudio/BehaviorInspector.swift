@@ -1,7 +1,7 @@
 import SwiftUI
 import StudioCore
 
-struct BehaviorInspector:View {
+@MainActor struct BehaviorInspector:View {
     @Bindable var session:EditorSession
     let node:DesignNode
     func binding<T>(_ key:WritableKeyPath<DesignNode,T?>,_ fallback:T)->Binding<T>{Binding(get:{session.page.nodes.first{$0.id==node.id}?[keyPath:key] ?? fallback},set:{value in session.updateNode(node.id){$0[keyPath:key]=value}})}
@@ -58,7 +58,7 @@ struct BehaviorInspector:View {
         HStack{if let data=node[keyPath:key]{UploadedIcon(data:data,symbol:"photo",size:24)};Button(title){session.uploadIcon(node.id,slot:key)};if node[keyPath:key] != nil{Button("移除"){session.updateNode(node.id){$0[keyPath:key]=nil}}}}.font(.system(size:10))
     }
 }
-struct ProgressInspector:View {
+@MainActor struct ProgressInspector:View {
     @Bindable var session:EditorSession
     let node:DesignNode
     func binding<T>(_ key:WritableKeyPath<DesignNode,T?>,_ fallback:T)->Binding<T>{Binding(get:{node[keyPath:key] ?? fallback},set:{v in session.updateNode(node.id){$0[keyPath:key]=v}})}
@@ -75,7 +75,7 @@ struct ProgressInspector:View {
     }
     func changeStyle(_ style:String) {session.updateNode(node.id){n in n.progressStyle=style;if n.progressLabel==nil{n.progressLabel="percent"};var r=n.frame(session.variant,device:session.project.device);if style=="circular"{r.width=100;r.height=100}else{r.width=300;r.height=44};n.frames[session.variant.rawValue]=r}}
 }
-struct TemplateComposer:View {
+@MainActor struct TemplateComposer:View {
     @Bindable var session:EditorSession
     @Environment(\.dismiss) var dismiss
     var body:some View {

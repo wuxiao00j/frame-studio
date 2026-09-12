@@ -1,7 +1,7 @@
 import SwiftUI
 import StudioCore
 
-@main struct FrameStudioApp:App {
+@main @MainActor struct FrameStudioApp:App {
     @State private var session=EditorSession()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     var body:some Scene {
@@ -23,7 +23,7 @@ final class AppDelegate:NSObject,NSApplicationDelegate {
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool{true}
 }
-struct EditorRoot:View {
+@MainActor struct EditorRoot:View {
     @Bindable var session:EditorSession
     var body:some View {
         VStack(spacing:0){EditorToolbar(session:session);Divider();HStack(spacing:0){LibrarySidebar(session:session);Divider();CanvasWorkspace(session:session);Divider();InspectorView(session:session)}}
@@ -42,7 +42,7 @@ struct EditorRoot:View {
             .alert("操作未完成",isPresented:Binding(get:{session.error != nil},set:{if !$0{session.error=nil}})){Button("好"){session.error=nil}}message:{Text(session.error ?? "")}
     }
 }
-struct EditorToolbar:View {
+@MainActor struct EditorToolbar:View {
     @Bindable var session:EditorSession
     var body:some View {
         HStack(spacing:14){
@@ -65,7 +65,7 @@ struct EditorToolbar:View {
         }.buttonStyle(.plain).padding(.trailing,20).frame(height:64)
     }
 }
-struct DeviceSettings:View {
+@MainActor struct DeviceSettings:View {
     @Bindable var session:EditorSession
     @Environment(\.dismiss) var dismiss
     @State private var device=DeviceProfile()
@@ -81,7 +81,7 @@ struct DeviceSettings:View {
     }
     func dimensionRow(_ name:String,width:Binding<Double>,height:Binding<Double>)->some View {HStack{Text(name).font(.system(size:12)).frame(width:95,alignment:.leading);NumberField(label:"宽",value:width);Text("×").foregroundStyle(studioMuted);NumberField(label:"高",value:height)}}
 }
-struct MCPInfo:View {
+@MainActor struct MCPInfo:View {
     @Bindable var session:EditorSession
     @Environment(\.dismiss) var dismiss
     var executable:String {Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/frame-studio-mcp").path}
@@ -89,7 +89,7 @@ struct MCPInfo:View {
     func quoted(_ s:String)->String {String(data:try! JSONEncoder().encode(s),encoding:.utf8)!}
     var body:some View {VStack(alignment:.leading,spacing:18){HStack{Label("Agent 连接",systemImage:"point.3.connected.trianglepath.dotted").font(.title2.bold());Spacer();Button("完成"){dismiss()}.keyboardShortcut(.defaultAction)};Text("通过本地 MCP 操作当前设计项目。Agent 可以读取页面、增删组件、调整属性、导入旧项目、对齐布局并导出 SwiftUI、Android 或 Flutter 文件。").font(.system(size:12)).lineSpacing(5);Text("当前项目").font(.caption).foregroundStyle(studioMuted);Text(session.url.path).font(.system(size:10,design:.monospaced)).textSelection(.enabled);Text("Codex MCP 配置").font(.caption).foregroundStyle(studioMuted);Text(config).font(.system(size:10,design:.monospaced)).textSelection(.enabled).padding(14).frame(maxWidth:.infinity,alignment:.leading).background(Color(hex:"F4F1F9"),in:RoundedRectangle(cornerRadius:8));HStack{Button("复制连接配置"){NSPasteboard.general.clearContents();NSPasteboard.general.setString(config,forType:.string)};Button("显示项目文件"){NSWorkspace.shared.activateFileViewerSelecting([session.url])}};Text("连接配置仅用于设置 Agent。页面导出始终直接生成文件。应用每秒同步磁盘更改，发生版本冲突时会保留已有文件。").font(.system(size:10)).foregroundStyle(studioMuted).lineSpacing(4)}.padding(28).frame(width:600)}
 }
-struct ImportReportView:View {
+@MainActor struct ImportReportView:View {
     let session:EditorSession
     @Environment(\.dismiss) var dismiss
     @State private var category=0

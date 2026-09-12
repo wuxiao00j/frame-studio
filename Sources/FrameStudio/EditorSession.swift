@@ -132,7 +132,7 @@ import StudioCore
         change{$0.templates.append(ComponentTemplate(name:name.isEmpty ? "我的组合组件":name,nodes:nodes))};showTemplateComposer=false;status="已保存组合组件"
     }
     func insertTemplate(_ template:ComponentTemplate) {
-        let nodes=ComponentAssembly.instantiate(template,origin:Rect(24,120+(scrollOffsets[variant] ?? 0)),variant:variant,device:project.device,pages:Set(project.pages.map(\.id)))
+        let nodes=ComponentAssembly.instantiate(template,origin:Rect(24,120.0+Double(scrollOffsets[variant] ?? 0)),variant:variant,device:project.device,pages:Set(project.pages.map(\.id)))
         change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){p.pages[i].nodes += nodes}};selection=Set(nodes.map(\.id))
     }
     func decompose(_ id:String) {

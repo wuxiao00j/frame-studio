@@ -14,7 +14,7 @@ let studioInk=Color(hex:"292638")
 let studioMuted=Color(hex:"938DA6")
 let studioLine=Color(hex:"EAE7F0")
 
-struct ComponentPreview: View {
+@MainActor struct ComponentPreview: View {
     let node:DesignNode
     var corners:CornerRadii?
     var activePage=""
