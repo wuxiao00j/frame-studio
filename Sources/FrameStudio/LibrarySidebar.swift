@@ -59,7 +59,7 @@ import StudioCore
             Button{session.updateNode(node.id){$0.locked.toggle()}}label:{Image(systemName:node.locked ? "lock.fill" : "lock.open")}
         }.font(.system(size:10)).buttonStyle(.plain).foregroundStyle(node.hidden ? studioMuted : studioInk).padding(9)
             .background(session.selection.contains(node.id) ? Color(hex:"F0EBFC") : .clear,in:RoundedRectangle(cornerRadius:6))
-            .contentShape(Rectangle()).help("选择单个图层；Shift 多选，不会解除原有组合")
+            .contentShape(Rectangle()).accessibilityElement(children:.contain)
             .onTapGesture{session.select(node,additive:NSEvent.modifierFlags.contains(.shift),includingGroup:false)}
     }
 }
