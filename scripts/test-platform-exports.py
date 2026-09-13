@@ -20,7 +20,10 @@ for kind in tool('list_components')['components']:
 png=__import__('base64').b64encode((root/'Resources/AppIcon.iconset/icon_32x32.png').read_bytes()).decode()
 for node in design['pages'][-1]['nodes']:
  if node['kind']=='text':node['text']='中文 $price ${danger} "quote" \\ slash\nNext line'
- if node['kind']=='image':node['imageData']=png
+ if node['kind']=='text':node['lineLimit']=2;node['lineSpacing']=4;node['minimumScaleFactor']=0.7
+ if node['kind']=='image':node['imageData']=png;node['imageFit']='fit'
+ if node['kind']=='card':node['material']='thin'
+ if node['kind']=='rectangle':node['clipMasks']={v:[{'shape':'roundedRectangle','rect':{'x':0.1,'y':0,'width':0.8,'height':1},'radius':0.15},{'shape':'ellipse','rect':{'x':0,'y':0,'width':1,'height':1},'radius':0}] for v in ['standardPortrait','standardLandscape','outerPortrait','outerLandscape','innerPortrait','innerLandscape']}
  if node['kind']=='custom':node['flutterCode']="const Text('Custom Flutter')";node['composeCode']='Text("Custom Compose")'
  node['fill']='EEEAF8DD'
  if node['kind']=='toggle':node['showIcon']=True;node['iconData']=png;node['controlPosition']='leading'

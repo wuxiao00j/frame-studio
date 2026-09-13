@@ -74,9 +74,9 @@ enum SwiftStructuredImporter {
                     box.nodes[i].frames[Variant.standardPortrait.rawValue]=r
                 }
                 let valid=box.nodes.filter {n in let r=layout.rect(n);return r.x.isFinite && r.y.isFinite && r.y<39000 && r.width.isFinite && r.height.isFinite}
-                for node in valid where !nodes.contains(where:{$0.id==node.id}) {var node=node;node.frames=[:];node.visibleVariants=[];nodes.append(node)}
+                for node in valid where !nodes.contains(where:{$0.id==node.id}) {var node=node;node.frames=[:];node.clipMasks=nil;node.visibleVariants=[];nodes.append(node)}
                 let frames=Dictionary(valid.map{($0.id,layout.rect($0))},uniquingKeysWith:{first,_ in first})
-                for i in nodes.indices {if let frame=frames[nodes[i].id]{nodes[i].frames[variant.rawValue]=frame;nodes[i].visibleVariants?.append(variant.rawValue)}}
+                for i in nodes.indices {if let frame=frames[nodes[i].id]{nodes[i].frames[variant.rawValue]=frame;nodes[i].visibleVariants?.append(variant.rawValue);if let masks=valid.first(where:{$0.id==nodes[i].id})?.clipMasks?[Variant.standardPortrait.rawValue]{if nodes[i].clipMasks==nil{nodes[i].clipMasks=[:]};nodes[i].clipMasks?[variant.rawValue]=masks}}}
             }
             // A reused local expression must have separate editable identities per occurrence.
             var seen=Set<String>()

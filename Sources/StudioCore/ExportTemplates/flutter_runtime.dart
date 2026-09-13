@@ -61,7 +61,7 @@ class DesignCanvas extends StatelessWidget {
   final w=math.max(1.0,numProp(f,'width')+(anchor=='stretch' ? dx:0));
   final x=numProp(f,'x')+(['topRight','bottomRight'].contains(anchor) ? dx:anchor=='center' ? dx/2:0);
   final y=numProp(f,'y')+(['bottomLeft','bottomRight'].contains(anchor) ? dy:anchor=='center' ? dy/2:0);
-  return Positioned(left:x,top:y,width:w,height:numProp(f,'height'),child:DesignElement(key:ValueKey('$pageID:${spec['id']}'),spec:{...spec,"_corners":f},activePage:pageID,navigate:navigate,openSidebar:openSidebar,customBuilder:customBuilders[spec['id']]));
+  return Positioned(left:x,top:y,width:w,height:numProp(f,'height'),child:DesignElement(key:ValueKey('$pageID:${spec['id']}'),spec:{...spec,"_corners":f,"_masks":(spec["clipMasks"] as List? ?? const [[],[],[],[],[],[]])[variant]},activePage:pageID,navigate:navigate,openSidebar:openSidebar,customBuilder:customBuilders[spec['id']]));
  }
 }
 class DesignElement extends StatefulWidget {
@@ -83,7 +83,7 @@ class _DesignElementState extends State<DesignElement> {
   return path.isNotEmpty ? SizedBox(width:pixels,height:pixels,child:Image.asset(path,fit:BoxFit.contain,errorBuilder:(context,error,stack)=>Icon(Icons.broken_image_outlined,size:pixels,color:color??accent))) : Icon(designIcon(key??s('symbol')),size:pixels,color:color??accent);
  }
 
- Widget media({BoxFit fit=BoxFit.cover})=>s('asset').isNotEmpty ? Image.asset(s('asset'),fit:fit,width:double.infinity,height:double.infinity):Center(child:icon(size:d('iconSize')+12));
+ Widget media({BoxFit? fit})=>s('asset').isNotEmpty ? Image.asset(s('asset'),fit:fit ?? (s('imageFit')=='fit' ? BoxFit.contain:s('imageFit')=='stretch' ? BoxFit.fill:BoxFit.cover),width:double.infinity,height:double.infinity):Center(child:icon(size:d('iconSize')+12));
  Widget glyph()=>s('iconAsset').isNotEmpty ? icon(color:foreground):s('asset').isEmpty ? icon(color:foreground):SizedBox(width:d('iconSize'),height:d('iconSize'),child:media(fit:BoxFit.contain));
  Widget avatar()=>ClipRRect(borderRadius:BorderRadius.circular(d('avatarSize')/3),child:SizedBox(width:d('avatarSize'),height:d('avatarSize'),child:ColoredBox(color:accent.withValues(alpha:0.12),child:media())));
  Widget hit(Widget child,VoidCallback action)=>GestureDetector(behavior:HitTestBehavior.opaque,onTap:action,child:child);
@@ -91,15 +91,17 @@ class _DesignElementState extends State<DesignElement> {
  @override Widget build(BuildContext context) {
   final f=Map<String,dynamic>.from(n['_corners'] as Map? ?? {});final radius=BorderRadius.only(topLeft:Radius.circular(numProp(f,'tl',d('cornerRadius'))),topRight:Radius.circular(numProp(f,'tr',d('cornerRadius'))),bottomLeft:Radius.circular(numProp(f,'bl',d('cornerRadius'))),bottomRight:Radius.circular(numProp(f,'br',d('cornerRadius'))));
   return LayoutBuilder(builder:(context,bounds) {
-   Widget result=DecoratedBox(decoration:BoxDecoration(color:s('kind')=='circle' ? Colors.transparent:designColor(s('fill')),gradient:s('kind')=='circle' ? null:designGradient(n,bounds.biggest),borderRadius:radius,boxShadow:d('shadow')>0 ? [BoxShadow(color:s('shadowColor').isEmpty ? Colors.black.withValues(alpha:0.09):designColor(s('shadowColor')),blurRadius:d('shadow'),offset:Offset(d('shadowX'),d('shadowY',d('shadow')/3)))]:null),child:ClipRRect(borderRadius:radius,child:DecoratedBox(position:DecorationPosition.foreground,decoration:BoxDecoration(borderRadius:radius,border:d('borderWidth')>0 ? Border.all(color:designColor(s('borderColor')),width:d('borderWidth')):null),child:content(context))));
+   Widget result=DecoratedBox(decoration:BoxDecoration(color:s('kind')=='circle' ? Colors.transparent:(s('material').isEmpty ? designColor(s('fill')):designMaterialTint(s('material'))),gradient:s('kind')=='circle' || s('material').isNotEmpty ? null:designGradient(n,bounds.biggest),borderRadius:radius,boxShadow:d('shadow')>0 ? [BoxShadow(color:s('shadowColor').isEmpty ? Colors.black.withValues(alpha:0.09):designColor(s('shadowColor')),blurRadius:d('shadow'),offset:Offset(d('shadowX'),d('shadowY',d('shadow')/3)))]:null),child:ClipRRect(borderRadius:radius,child:DecoratedBox(position:DecorationPosition.foreground,decoration:BoxDecoration(borderRadius:radius,border:d('borderWidth')>0 ? Border.all(color:designColor(s('borderColor')),width:d('borderWidth')):null),child:s('material').isEmpty ? content(context):BackdropFilter(filter:ui.ImageFilter.blur(sigmaX:20,sigmaY:20),child:content(context)))));
    if(d('blurRadius')>0)result=ImageFiltered(imageFilter:ui.ImageFilter.blur(sigmaX:d('blurRadius'),sigmaY:d('blurRadius')),child:result);
+   final masks=n['_masks'] as List? ?? const [];
+   if(masks.isNotEmpty)result=ClipPath(clipper:DesignImportedClipper(masks),child:result);
    return Transform.rotate(angle:d('rotation')*math.pi/180,child:Opacity(opacity:d('opacity',1),child:result));
   });
  }
  Widget content(BuildContext context) {
   final pad=d('padding',16),gap=d('spacing',12);
   switch(s('kind')) {
-   case 'text':return Align(alignment:align==TextAlign.center ? Alignment.center:align==TextAlign.right ? Alignment.centerRight:Alignment.centerLeft,child:text(s('text')));
+   case 'text':return Align(alignment:align==TextAlign.center ? Alignment.center:align==TextAlign.right ? Alignment.centerRight:Alignment.centerLeft,child:DesignImportedText(value:s('text'),align:align,style:TextStyle(fontSize:d('fontSize',16),color:foreground,fontWeight:s('fontWeight')=='bold' ? FontWeight.bold:s('fontWeight')=='semibold' ? FontWeight.w600:s('fontWeight')=='medium' ? FontWeight.w500:FontWeight.normal),limit:n['lineLimit'] as int?,spacing:d('lineSpacing'),minimumScale:d('minimumScaleFactor',1)));
    case 'icon':return Center(child:glyph());
    case 'iconButton':return hit(Center(child:glyph()),widget.openSidebar);
    case 'button':return hit(Center(child:Row(mainAxisSize:MainAxisSize.min,children:[if(n['showIcon']==true) ...[icon(color:foreground),SizedBox(width:gap)],if(n['showLabel']!=false) Flexible(child:text(s('text')))])),go);
@@ -132,7 +134,7 @@ class _DesignElementState extends State<DesignElement> {
    case 'rating':return Center(child:FittedBox(fit:BoxFit.scaleDown,child:Row(mainAxisSize:MainAxisSize.min,children:[for(var i=1;i<=d('maximumValue',5).toInt();i++) Padding(padding:EdgeInsets.only(right:i==d('maximumValue',5).toInt()?0:gap),child:hit(Icon(i<=number?Icons.star:Icons.star_border,color:accent,size:d('iconSize')),()=>setState(()=>number=i.toDouble())))])));
    case 'loading':return Center(child:SizedBox(width:24,height:24,child:CircularProgressIndicator(color:accent,strokeWidth:3)));
    case 'rectangle':return const SizedBox.expand();
-   case 'circle':return LayoutBuilder(builder:(context,bounds)=>DecoratedBox(decoration:BoxDecoration(color:designColor(s('fill')),gradient:designGradient(n,bounds.biggest),shape:BoxShape.circle)));
+   case 'circle':return LayoutBuilder(builder:(context,bounds)=>DecoratedBox(decoration:BoxDecoration(color:s('material').isEmpty ? designColor(s('fill')):designMaterialTint(s('material')),gradient:s('material').isEmpty ? designGradient(n,bounds.biggest):null,shape:BoxShape.circle)));
    case 'spacer':return const SizedBox.expand();
    case 'qrCode':case 'chevron':return hit(Center(child:icon(color:foreground)),go);
    case 'statistic':return Padding(padding:EdgeInsets.all(pad),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Row(children:[if(n['showIcon']==true) ...[icon(),const SizedBox(width:8)],Expanded(child:text(s('text'),size:13))]),const SizedBox(height:8),text(s('subtitle'),size:d('fontSize'),weight:FontWeight.w600)]));
@@ -153,4 +155,41 @@ class _DesignElementState extends State<DesignElement> {
   return Padding(padding:const EdgeInsets.symmetric(horizontal:2),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[if(label.isNotEmpty) ...[Align(alignment:Alignment.centerRight,child:text(label,size:math.min(14,d('fontSize')))),const SizedBox(height:4)],SizedBox(height:thickness,child:s('progressStyle')=='steps' ? Row(children:[for(var i=0;i<steps;i++) Expanded(child:Padding(padding:EdgeInsets.only(right:i==steps-1 ? 0:4),child:DecoratedBox(decoration:BoxDecoration(color:i<amount*steps ? accent:track,borderRadius:BorderRadius.circular(thickness/2)))))]) : ClipRRect(borderRadius:BorderRadius.circular(thickness/2),child:LinearProgressIndicator(value:amount,color:accent,backgroundColor:track)))]));
  }
 
+}
+
+// Platform material approximation; does not emulate system Liquid Glass.
+Color designMaterialTint(String material)=>Colors.white.withValues(alpha:switch(material){'ultraThin'=>0.30,'thin'=>0.45,'thick'=>0.80,'ultraThick'=>0.92,_=>0.65});
+class DesignImportedClipper extends CustomClipper<Path> {
+ final List masks;
+ const DesignImportedClipper(this.masks);
+ @override Path getClip(Size size) {
+  Path? result;
+  for(final raw in masks) {
+   final m=Map<String,dynamic>.from(raw as Map),r=Map<String,dynamic>.from(m['rect'] as Map);
+   final bounds=Rect.fromLTWH(numProp(r,'x')*size.width,numProp(r,'y')*size.height,numProp(r,'width')*size.width,numProp(r,'height')*size.height);
+   final radius=numProp(m,'radius')*math.min(size.width,size.height);
+   final path=Path();
+   if(m['shape']=='ellipse'){path.addOval(bounds);}else{path.addRRect(RRect.fromRectAndRadius(bounds,Radius.circular(m['shape']=='rectangle' ? 0:radius)));}
+   result=result==null ? path:Path.combine(PathOperation.intersect,result,path);
+  }
+  return result ?? (Path()..addRect(Offset.zero & size));
+ }
+ @override bool shouldReclip(DesignImportedClipper oldClipper)=>oldClipper.masks!=masks;
+}
+class DesignImportedText extends StatelessWidget {
+ final String value;final TextAlign align;final TextStyle style;final int? limit;final double spacing,minimumScale;
+ const DesignImportedText({super.key,required this.value,required this.align,required this.style,this.limit,this.spacing=0,this.minimumScale=1});
+ @override Widget build(BuildContext context)=>LayoutBuilder(builder:(context,bounds) {
+  final original=style.fontSize ?? 16;
+  TextStyle sized(double size)=>style.copyWith(fontSize:size,height:spacing>0 ? 1.25+spacing/size:null);
+  var size=original;
+  if(minimumScale<1) {
+   bool fits(double font) {
+    final painter=TextPainter(text:TextSpan(text:value,style:sized(font)),textDirection:Directionality.of(context),textAlign:align,maxLines:limit,textScaler:MediaQuery.textScalerOf(context))..layout(maxWidth:bounds.maxWidth);
+    final ok=!painter.didExceedMaxLines && painter.height<=bounds.maxHeight && painter.width<=bounds.maxWidth;painter.dispose();return ok;
+   }
+   if(!fits(original)){var low=original*minimumScale,high=original;for(var i=0;i<10;i++){final mid=(low+high)/2;if(fits(mid)){low=mid;}else{high=mid;}}size=low;}
+  }
+  return Text(value,textAlign:align,maxLines:limit,overflow:limit==null ? null:TextOverflow.ellipsis,style:sized(size));
+ });
 }

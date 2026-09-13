@@ -22,7 +22,7 @@ public enum SwiftExporter {
         let sources=destination.appendingPathComponent("Sources/GeneratedUI")
         try FileManager.default.createDirectory(at:sources,withIntermediateDirectories:true)
         do {
-            try (runtime+"\n"+advancedRuntime).write(to:sources.appendingPathComponent("DesignSupport.swift"),atomically:true,encoding:.utf8)
+            try (runtime+"\n"+advancedRuntime+"\n"+renderingRuntime).write(to:sources.appendingPathComponent("DesignSupport.swift"),atomically:true,encoding:.utf8)
             try root(project).write(to:sources.appendingPathComponent("DesignedAppView.swift"),atomically:true,encoding:.utf8)
             for page in project.pages { try pageSource(page,project:project).write(to:sources.appendingPathComponent(identifier(page.id)+".swift"),atomically:true,encoding:.utf8) }
             let assets=sources.appendingPathComponent("Assets.xcassets")
@@ -129,13 +129,15 @@ public enum SwiftExporter {
                         .font(.system(size: \(number(n.fontSize)), weight: .\(weight)))
                         .foregroundStyle(Color(designHex: \(literal(n.foreground))))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .\(align))
-                        .background(\([ComponentKind.circle,.rectangle,.divider].contains(n.kind) ? "Color.clear":paintExpression(n)))
+                        .background(\([ComponentKind.circle,.rectangle,.divider].contains(n.kind) ? "Color.clear":"Rectangle().fill(\(paintExpression(n)))"))
                         .clipShape(\(shape))
                         .overlay(\(shape).stroke(Color(designHex: \(literal(n.borderColor))), lineWidth: \(number(n.borderWidth))))
                         .shadow(color: Color(designHex: \(literal(n.shadowColor ?? (n.shadow>0 ? "00000017":"00000000")))), radius: \(number(n.shadow)), x: \(number(n.shadowX ?? 0)), y: \(number(n.shadowY ?? n.shadow/3)))
                         .blur(radius: \(number(n.blurRadius ?? 0)))
+                        \(n.clipMasks==nil ? "" : ".designClipped(elementMasks\(i)[variant])")
                         .opacity(\(number(n.opacity))).rotationEffect(.degrees(\(number(n.rotation))))
                 }
+                \(n.clipMasks==nil ? "" : "private var elementMasks\(i): [[DesignClipRegion]] { \(masksExpression(n)) }")
             """
         }.joined(separator:"\n")
         return """
@@ -160,6 +162,7 @@ public enum SwiftExporter {
         """
     }
     static func paintExpression(_ n:DesignNode)->String {
+        if let material=n.material{return "AnyShapeStyle(Material.\(material))"}
         guard let g=n.gradient else{return "Color(designHex: \(literal(n.fill)))"}
         let stops=g.stops.map{"Gradient.Stop(color: Color(designHex: \(literal($0.color))), location: \(number($0.location)))"}.joined(separator:", ")
         if g.kind=="radial" {return "RadialGradient(gradient: Gradient(stops: [\(stops)]), center: UnitPoint(x: \(number(g.startX)), y: \(number(g.startY))), startRadius: \(number(g.startRadius)), endRadius: \(number(g.endRadius)))"}
@@ -167,7 +170,7 @@ public enum SwiftExporter {
     }
     static func expression(_ n:DesignNode,pageID:String)->String {
         let t=literal(n.text),sub=literal(n.subtitle),symbol=literal(n.symbol),pad=number(n.padding),gap=number(n.spacing),icon=number(n.iconSize),accent="Color(designHex: \(literal(n.accent)))"
-        let media = n.imageData.isEmpty ? "Image(systemName: \(symbol)).resizable().scaledToFit().padding(12).foregroundStyle(\(accent))" : "Image(\(literal(DesignExporter.assetName(n))), bundle: .designAssets).resizable().scaledToFill().clipped()"
+        let media = n.imageData.isEmpty ? "Image(systemName: \(symbol)).resizable().scaledToFit().padding(12).foregroundStyle(\(accent))" : "Image(\(literal(DesignExporter.assetName(n))), bundle: .designAssets).resizable()\(n.imageFit=="stretch" ? "" : n.imageFit=="fit" ? ".scaledToFit()" : ".scaledToFill()").clipped()"
         let glyph = n.imageData.isEmpty ? "Image(systemName: \(symbol)).font(.system(size: \(icon)))" : "Image(\(literal(DesignExporter.assetName(n))), bundle: .designAssets).resizable().scaledToFit().frame(width: \(icon), height: \(icon))"
         let avatar="\(media).frame(width: \(number(n.avatarSize)), height: \(number(n.avatarSize))).background(\(accent).opacity(0.12)).clipShape(RoundedRectangle(cornerRadius: \(number(n.avatarSize/3))))"
         func glyphExpression(_ symbol:String,_ asset:String?,_ size:Double)->String {"DesignerGlyph(symbol: \(literal(symbol)), asset: \(literal(asset ?? "")), size: \(number(size)))"}
@@ -177,7 +180,7 @@ public enum SwiftExporter {
         let chevron=glyphExpression("chevron.right",n.chevronIconData?.isEmpty==false ? DesignExporter.iconAssetName(n,"chevron"):nil,12)
         let trailing=glyphExpression(n.trailingSymbol ?? "square.and.pencil",n.trailingIconData?.isEmpty==false ? DesignExporter.iconAssetName(n,"trailing"):nil,n.iconSize)
         switch n.kind {
-        case .text:return "Text(\(t)).multilineTextAlignment(.\(["leading","center","trailing"].contains(n.textAlignment) ? n.textAlignment : "leading"))"
+        case .text:return "Text(\(t)).lineLimit(\(n.lineLimit.map(String.init) ?? "nil")).lineSpacing(\(number(n.lineSpacing ?? 0))).minimumScaleFactor(\(number(n.minimumScaleFactor ?? 1))).multilineTextAlignment(.\(["leading","center","trailing"].contains(n.textAlignment) ? n.textAlignment : "leading"))"
         case .icon:return "\(n.iconData != nil ? leadingIcon:glyph).frame(maxWidth: .infinity).onTapGesture { navigate(\(literal(n.targetPageID))) }"
         case .iconButton:return "Button(action: openSidebar) { \(n.iconData != nil ? leadingIcon:glyph).frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
         case .button:return "Button { navigate(\(literal(n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+"; " : "")\(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
@@ -197,7 +200,7 @@ public enum SwiftExporter {
             return n.kind == .tabBar ? "HStack(spacing: 0) { \(buttons) }.padding(.horizontal, 6)" : "VStack(alignment: .leading, spacing: \(gap)) { Text(\(t)); \(buttons); Spacer(minLength: 0) }.padding(\(pad))"
         case .listRow:return "Button { navigate(\(literal(n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+".foregroundStyle(\(accent)); " : "")VStack(alignment: .leading, spacing: 5) { Text(\(t)); Text(\(sub)).font(.system(size: \(number(max(10,n.fontSize-4))))).opacity(0.45) }; Spacer(minLength: 0); \(n.hasChevron ? chevron+".opacity(0.3)":"EmptyView()") }.padding(\(pad)) }.buttonStyle(.plain)"
         case .card:return "VStack(alignment: .leading, spacing: \(gap)) { \(glyphExpression(n.symbol,n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):nil,n.iconSize+6)).foregroundStyle(\(accent)); Spacer(minLength: 0); Text(\(t)).fontWeight(.semibold); Text(\(sub)).font(.system(size: \(number(max(11,n.fontSize-5))))).opacity(0.5) }.frame(maxWidth: .infinity, alignment: .leading).padding(\(number(n.padding+4)))"
-        case .divider:return paintExpression(n)
+        case .divider:return "Rectangle().fill(\(paintExpression(n)))"
         case .toggle,.switchControl:return "DesignerToggle(title: \(t), initial: \(n.isOn), leading: \(n.position=="leading"), showLabel: \(n.hasLabel), showIcon: \(n.hasIcon), symbol: \(symbol), asset: \(literal(n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):"")), iconSize: \(icon), gap: \(gap), accent: \(accent)).padding(.horizontal, \(pad))"
         case .textField,.searchField:return "DesignInput(placeholder: \(t), symbol: \(literal(n.kind == .searchField ? n.symbol : "")), asset: \(literal(n.kind == .searchField && n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):""))).padding(.horizontal, \(pad))"
         case .badge:return "Text(\(t)).frame(maxWidth: .infinity, maxHeight: .infinity)"
@@ -213,7 +216,7 @@ public enum SwiftExporter {
         case .dateField:return "DesignerDate(title: \(t), initial: \(literal(n.dateValue ?? "2026-01-01"))).padding(.horizontal, \(pad))"
         case .rating:return "DesignerRating(initial: \(number(n.number)), count: \(Int(n.maximum)), size: \(icon), gap: \(gap), accent: \(accent))"
         case .loading:return "ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)"
-        case .rectangle:return paintExpression(n)
+        case .rectangle:return "Rectangle().fill(\(paintExpression(n)))"
         case .circle:return "Circle().fill(\(paintExpression(n)))"
         case .spacer:return "Color.clear"
         case .qrCode,.chevron:return "\(leadingIcon).frame(maxWidth: .infinity, maxHeight: .infinity).onTapGesture { navigate(\(literal(n.targetPageID))) }"

@@ -1,5 +1,19 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.7 — 2026-09-13
+
+Beta.7 保留矩形、圆角矩形、圆形 / 椭圆和胶囊的嵌套裁剪，横竖屏独立存储。裁剪边界随拆分图层移动、缩放；选择图层后可在“导入的容器裁剪”中解除，并用撤销恢复。任意自定义 Path、渐变透明度蒙版和组合级混合效果仍需人工还原。
+
+文字组件新增“文字排版”：限制行数、行间距和最小字号比例。图片组件新增“图片显示”：填满裁剪、完整显示或拉伸。导入器展开支持的 Text / View 扩展修饰器链，保留这些规则，并修正主题条件颜色与中文多行测量。
+
+“渐变与柔化”的“背景材质”提供五档磨砂。Mac 预览和 SwiftUI 源码使用系统 Material，Flutter 使用背景模糊；Android Compose 使用半透明底色替代，导出报告会说明差异。它们不等同于完整的系统 Liquid Glass 折射与交互动画，静态 PNG 也不能完整反映实时材质。系统字号偏好、未提供的运行状态和复杂布局仍需对照目标设备。
+
+Beta.7 retains nested rectangle, rounded-rectangle, circle / ellipse and capsule masks separately for each orientation. Masks move and scale with decomposed layers. Select a layer and use “导入的容器裁剪” to remove its retained masks; Undo restores them. Arbitrary custom Paths, gradient alpha masks and group compositing still need manual reconstruction.
+
+Text layers now expose line limits, line spacing and minimum font scale in “文字排版”. Image layers offer fill, fit and stretch in “图片显示”. Import expands supported Text / View extension modifier chains, retains these rules, and fixes conditional theme paints and multiline Chinese text measurement.
+
+“背景材质” within “渐变与柔化” offers five frosted-material levels. Mac previews and SwiftUI exports use system Material; Flutter uses backdrop blur; Android Compose uses a translucent fill, disclosed in the export report. These do not reproduce full system Liquid Glass refraction or interactive animations, and static PNGs cannot fully capture live materials. System text-size preferences, unspecified runtime states and complex layouts still require target-device comparison.
+
 ## 1.2.0-beta.6 — 2026-09-13
 
 补充 `.framestudio` 文件类型注册，并兼容旧工程文件的系统类型标记。 / Register the `.framestudio` document type and accept legacy document type metadata.

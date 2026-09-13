@@ -101,6 +101,12 @@ public struct DesignNode: Codable, Equatable, Identifiable, Sendable {
     public var imageData: String = ""
     public var fill = "FFFFFF"
     public var gradient:DesignGradient?
+    public var material:String?
+    public var clipMasks:[String:[DesignClipMask]]?
+    public var lineLimit:Int?
+    public var lineSpacing:Double?
+    public var minimumScaleFactor:Double?
+    public var imageFit:String?
     public var backgroundLayer:Bool?
     public var visibleVariants:[String]?
     public var blurRadius:Double?

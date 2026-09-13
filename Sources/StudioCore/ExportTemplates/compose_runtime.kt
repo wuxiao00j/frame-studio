@@ -23,6 +23,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -57,7 +68,9 @@ fun designBrush(n:DesignSpec,size:Size,density:Float):Brush {
     if(g.s("kind")=="radial") {val radius=g.n("endRadius",200.0)*density;val inner=g.n("startRadius")*density/radius;return Brush.radialGradient(*pairs.map{(inner+(1-inner)*it.first) to it.second}.toTypedArray(),center=start,radius=radius)}
     return Brush.linearGradient(*pairs.toTypedArray(),start=start,end=Offset(g.n("endX",1.0)*size.width,g.n("endY",1.0)*size.height))
 }
-fun Modifier.designPaint(n:DesignSpec):Modifier = drawBehind {drawRect(designBrush(n,size,density))}
+fun Modifier.designPaint(n:DesignSpec):Modifier = drawBehind {
+    if(n.s("material").isEmpty())drawRect(designBrush(n,size,density)) else drawRect(Color.White.copy(alpha=when(n.s("material")){"ultraThin"->0.30f;"thin"->0.45f;"thick"->0.80f;"ultraThick"->0.92f;else->0.65f}))
+}
 fun designIcon(key: String): ImageVector = when(key) {
     "menu" -> Icons.Default.Menu; "home" -> Icons.Default.Home; "star" -> Icons.Default.AutoAwesome
     "favorite" -> Icons.Default.Favorite; "person" -> Icons.Default.AccountCircle; "chat" -> Icons.Default.ChatBubbleOutline
@@ -103,6 +116,7 @@ fun designIcon(key: String): ImageVector = when(key) {
         val customShadow=n.s("shadowColor").isNotEmpty() && android.os.Build.VERSION.SDK_INT>=31
         Box(Modifier.offset { IntOffset((x*density).roundToInt(),(y*density).roundToInt()) }.requiredSize(w.dp,f.n("height").dp)
             .graphicsLayer { alpha=n.n("opacity",1.0); rotationZ=n.n("rotation") }
+            .then(n.data.optJSONArray("clipMasks")?.optJSONArray(variant)?.takeIf{it.length()>0}?.let{Modifier.clip(DesignImportedClipShape(it))} ?: Modifier)
             .blur(n.n("blurRadius").dp,edgeTreatment=BlurredEdgeTreatment.Unbounded)) {
             if(customShadow && n.n("shadow")>0) Box(Modifier.matchParentSize().offset(n.n("shadowX").dp,n.n("shadowY").dp).blur(n.n("shadow").dp,edgeTreatment=BlurredEdgeTreatment.Unbounded).clip(shape).background(designColor(n.s("shadowColor"))))
             Box(Modifier.matchParentSize().shadow((if(customShadow) 0f else n.n("shadow")).dp,shape,ambientColor=if(n.s("shadowColor").isEmpty()) Color.Black else designColor(n.s("shadowColor")),spotColor=if(n.s("shadowColor").isEmpty()) Color.Black else designColor(n.s("shadowColor"))).clip(shape).then(if(n.s("kind")=="circle") Modifier else Modifier.designPaint(n))
@@ -121,7 +135,7 @@ fun designIcon(key: String): ImageVector = when(key) {
         if(image!=null) Image(image,null,Modifier.size(size.dp),contentScale=ContentScale.Fit)
     }else Icon(designIcon(key), contentDescription=null, modifier=Modifier.size(size.dp),tint=color)
 }
-@Composable private fun Media(n: DesignSpec, modifier: Modifier=Modifier, fit: ContentScale=ContentScale.Crop) {
+@Composable private fun Media(n: DesignSpec, modifier: Modifier=Modifier, fit: ContentScale=when(n.s("imageFit")){"fit"->ContentScale.Fit;"stretch"->ContentScale.FillBounds;else->ContentScale.Crop}) {
     val asset=n.s("asset").removePrefix("assets/"); val context=LocalContext.current
     val bitmap=remember(asset) { if(asset.isEmpty()) null else context.assets.open(asset).use { BitmapFactory.decodeStream(it)?.asImageBitmap() } }
     if(bitmap!=null) Image(bitmap,contentDescription=n.s("text"),modifier=modifier.fillMaxSize(),contentScale=fit)
@@ -135,7 +149,7 @@ fun designIcon(key: String): ImageVector = when(key) {
     var enabled by remember { mutableStateOf(n.b("isOn")) };var value by remember { mutableFloatStateOf(n.n("value")) };var text by remember { mutableStateOf("") };var selected by remember { mutableIntStateOf(0) };var number by remember {mutableFloatStateOf(n.n("numberValue",1.0))};var date by remember {mutableStateOf(n.s("dateValue"))};val context=LocalContext.current
     val go = { navigate(n.s("targetPageID")) }
     when(n.s("kind")) {
-        "text" -> Box(Modifier.fillMaxSize(),contentAlignment=when(n.s("textAlignment")){"center"->Alignment.Center;"trailing"->Alignment.CenterEnd;else->Alignment.CenterStart}) { Text(n.s("text")) }
+        "text" -> Box(Modifier.fillMaxSize(),contentAlignment=when(n.s("textAlignment")){"center"->Alignment.Center;"trailing"->Alignment.CenterEnd;else->Alignment.CenterStart}) { DesignImportedText(n) }
         "icon","iconButton" -> Box(Modifier.fillMaxSize().then(if(n.s("kind")=="iconButton") Modifier.clickable(onClick=openSidebar) else Modifier),contentAlignment=Alignment.Center) { if(n.s("iconAsset").isNotEmpty() || n.s("asset").isEmpty()) Glyph(n,color=foreground) else Box(Modifier.size(n.n("iconSize").dp)) { Media(n,fit=ContentScale.Fit) } }
         "button" -> Row(Modifier.fillMaxSize().clickable(onClick=go),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) { if(n.b("showIcon")){Glyph(n,color=foreground);Spacer(Modifier.width(gap))};if(n.b("showLabel"))Text(n.s("text")) }
         "image","avatar" -> Media(n)
@@ -193,4 +207,32 @@ fun designIcon(key: String): ImageVector = when(key) {
             else LinearProgressIndicator(progress={amount},modifier=Modifier.fillMaxWidth().height(thickness.dp),color=accent,trackColor=track)
         }
     }
+}
+
+// Android uses a translucent material fill; background blur is not claimed.
+private class DesignImportedClipShape(private val masks:org.json.JSONArray):Shape {
+ override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline {
+  var result:Path?=null
+  for(i in 0 until masks.length()) {
+   val m=DesignSpec(masks.getJSONObject(i));val r=DesignSpec(m.data.getJSONObject("rect"))
+   val bounds=Rect(r.n("x")*size.width,r.n("y")*size.height,(r.n("x")+r.n("width"))*size.width,(r.n("y")+r.n("height"))*size.height)
+   val radius=if(m.s("shape")=="rectangle") 0f else m.n("radius")*minOf(size.width,size.height)
+   val path=Path().apply{if(m.s("shape")=="ellipse")addOval(bounds) else addRoundRect(RoundRect(bounds,CornerRadius(radius)))}
+   result=result?.let{Path.combine(PathOperation.Intersect,it,path)} ?: path
+  }
+  return Outline.Generic(result ?: Path().apply{addRect(Rect(Offset.Zero,size))})
+ }
+}
+@Composable private fun DesignImportedText(n:DesignSpec) {
+ val measurer=rememberTextMeasurer();val density=LocalDensity.current;val base=LocalTextStyle.current
+ val limit=if(n.data.has("lineLimit")) n.n("lineLimit").toInt().coerceAtLeast(1) else Int.MAX_VALUE
+ BoxWithConstraints {
+  val width=with(density){maxWidth.roundToPx()}.coerceAtLeast(1);val height=with(density){maxHeight.roundToPx()}.coerceAtLeast(1)
+  val original=n.n("fontSize",16.0);val spacing=n.n("lineSpacing");val minimum=n.n("minimumScaleFactor",1.0)
+  fun style(font:Float)=if(spacing>0)base.copy(fontSize=font.sp,lineHeight=(font*1.25f+spacing).sp) else base.copy(fontSize=font.sp)
+  fun fits(font:Float):Boolean {val r=measurer.measure(n.s("text"),style(font),maxLines=limit,constraints=Constraints(maxWidth=width));return !r.hasVisualOverflow && r.size.height<=height}
+  var font=original
+  if(minimum<1f && !fits(original)){var low=original*minimum;var high=original;repeat(10){val mid=(low+high)/2;if(fits(mid))low=mid else high=mid};font=low}
+  Text(n.s("text"),style=style(font),maxLines=limit,overflow=TextOverflow.Ellipsis)
+ }
 }

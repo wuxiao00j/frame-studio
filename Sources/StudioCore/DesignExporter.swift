@@ -89,6 +89,7 @@ public enum DesignExporter {
         for (slot,data) in [("icon",node.iconData),("qr",node.qrIconData),("chevron",node.chevronIconData),("trailing",node.trailingIconData)]{json[slot+"Asset"]=(data?.isEmpty==false) ? "assets/\(iconAssetName(node,slot)).png":""}
         json["symbol"]=MaterialSymbols.key(node.symbol);json["trailingSymbol"]=MaterialSymbols.key(node.trailingSymbol ?? "square.and.pencil")
         if let variants=node.visibleVariants{json["visibleVariants"]=variants.compactMap{Variant(rawValue:$0)}.compactMap{Variant.allCases.firstIndex(of:$0)}}
+        json["clipMasks"]=try JSONSerialization.jsonObject(with:JSONEncoder().encode(Variant.allCases.map{node.masks(in:$0)}))
         json["fixed"]=node.isFixed;json["showIcon"]=node.hasIcon;json["showLabel"]=node.hasLabel;json["showQRCode"]=node.hasQRCode;json["showChevron"]=node.hasChevron;json["controlPosition"]=node.position
         json["progressStyle"]=node.progressMode;json["progressText"]=node.progressText;json["fraction"]=node.fraction;json["progressThickness"]=node.progressThickness ?? 6;json["progressSteps"]=node.progressSteps ?? 5;json["trackColor"]=node.trackColor ?? "E5E2ED"
         json["numberValue"]=node.number;json["minimumValue"]=node.minimum;json["maximumValue"]=node.maximum;json["stepValue"]=node.step;json["dateValue"]=node.dateValue ?? "2026-01-01"
@@ -120,6 +121,8 @@ public enum DesignExporter {
         未提供对应平台表达式的自定义组件：\(custom.count)。这些位置保留可见占位，并在代码中标注 TODO；SwiftUI 表达式不会被当成 Dart / Kotlin 执行。
         \(custom.map{"- \($0.name)（\($0.id)）：请补充 \(format == .flutter ? "flutterCode" : "composeCode")。"}.joined(separator:"\n"))
         无精确映射的图标：\(unmatched.isEmpty ? "无" : unmatched.joined(separator:", "))。已映射为 Material Info 占位，可以替换为自己的图标资源。
+        材质组件：\(nodes.filter{$0.material != nil}.count)。SwiftUI 使用系统 Material，Flutter 使用背景模糊；Android Compose 使用半透明底色替代背景模糊。系统 Liquid Glass 的折射和交互动画不在此静态设计模型内。
+        Materials: SwiftUI uses system Material; Flutter uses backdrop blur; Android Compose falls back to a translucent fill. System Liquid Glass refraction and interactive animations are not reproduced.
         业务网络、支付、登录等逻辑不属于页面设计文件，需要在原项目接入。
         Design.framestudio 可完整重新导入原境编辑器。本次导出新建文件夹，不覆盖已有工程。
         """

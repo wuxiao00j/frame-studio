@@ -57,7 +57,25 @@ void main(){{
   await tester.pumpWidget(host(element(spec,page:'elsewhere'),369,64));await tester.pump();
   expect((tester.widget<Image>(find.byType(Image)).image as AssetImage).assetName,first['iconAsset']);
  }});
+ test('nested imported masks intersect and scale',(){{
+  final clip=DesignImportedClipper([
+   {{'shape':'rectangle','rect':{{'x':0.2,'y':0,'width':0.8,'height':1}},'radius':0}},
+   {{'shape':'ellipse','rect':{{'x':0,'y':0,'width':1,'height':1}},'radius':0}}
+  ]).getClip(const Size(200,100));
+  expect(clip.contains(const Offset(100,50)),isTrue);expect(clip.contains(const Offset(20,50)),isFalse);expect(clip.contains(const Offset(190,5)),isFalse);
+ }});
+ testWidgets('text scales only down to its configured minimum',(tester)async{{
+  await tester.pumpWidget(host(const DesignImportedText(value:'A long title for a tiny frame',align:TextAlign.left,style:TextStyle(fontSize:30),limit:1,minimumScale:0.5),90,40));
+  final text=tester.widget<Text>(find.text('A long title for a tiny frame'));
+  expect(text.style!.fontSize,greaterThanOrEqualTo(15));expect(text.style!.fontSize,lessThan(30));expect(text.maxLines,1);expect(tester.takeException(),isNull);
+ }});
+ testWidgets('material keeps backdrop blur and images respect fit',(tester)async{{
+  await tester.pumpWidget(host(element({literal(by_kind['card'])}),200,200));
+  expect(find.byType(BackdropFilter),findsOneWidget);
+  await tester.pumpWidget(host(element({literal(by_kind['image'])}),200,100));
+  expect(tester.widget<Image>(find.byType(Image)).fit,BoxFit.contain);expect(tester.takeException(),isNull);
+ }});
 }}
 """
 (root/'test/rich_features_test.dart').write_text(test)
-print('Prepared 5 additional widget tests for scrolling, icon states, switches, profile and progress.')
+print('Prepared 8 additional checks for interactions, retained masks, text fitting, materials and image modes.')

@@ -176,7 +176,7 @@ final class SwiftViewBuilder {
         while q<result.count {
             if ["(","[","{"].contains(result[q].text){q=SwiftSourceSyntax.end(result,q)}
             else if result[q].text=="?",q+1<result.count,result[q+1].text=="?",SwiftSourceSyntax.text(Array(result.prefix(q)))=="nil" {return resolve(Array(result.dropFirst(q+2)),context,depth:depth+1)}
-            else if result[q].text=="?",q+1<result.count,result[q+1].text != "?",result[q+1].text != ".",let condition=boolean(SwiftSourceSyntax.text(Array(result.prefix(q)))) {
+            else if result[q].text=="?",q+1<result.count,result[q+1].text != "?",result[q+1].text != ".",let condition=boolean(SwiftSourceSyntax.text(resolve(Array(result.prefix(q)),context,depth:depth+1))) {
                 var colon=q+1
                 while colon<result.count && result[colon].text != ":" {if ["(","[","{"].contains(result[colon].text){colon=SwiftSourceSyntax.end(result,colon)};colon+=1}
                 if colon<result.count {return resolve(condition ? Array(result[(q+1)..<colon]):Array(result.dropFirst(colon+1)),context,depth:depth+1)}
@@ -378,7 +378,7 @@ final class SwiftViewBuilder {
     func modify(_ element:SwiftImportElement,_ modifier:SwiftImportCall,context:SwiftImportContext)->SwiftImportElement {
         let name=modifier.name,ref=reference(context,modifier.line)
         var args=modifier.args.mapValues{resolve($0,context)}
-        let supported:Set<String>=["padding","frame","offset","position","font","foregroundStyle","foregroundColor","tint","background","overlay","clipShape","cornerRadius","fill","stroke","strokeBorder","opacity","shadow","bold","fontWeight","multilineTextAlignment","buttonStyle","blur","lineSpacing","lineLimit","fixedSize","layoutPriority"]
+        let supported:Set<String>=["padding","frame","offset","position","font","foregroundStyle","foregroundColor","tint","background","overlay","clipShape","cornerRadius","fill","stroke","strokeBorder","opacity","shadow","bold","fontWeight","multilineTextAlignment","buttonStyle","blur","lineSpacing","lineLimit","minimumScaleFactor","clipped","scaledToFit","scaledToFill","resizable","aspectRatio","fixedSize","layoutPriority"]
         if supported.contains(name) {
             var children=[element]
             if ["background","overlay"].contains(name),let tokens=modifier.closures["$body"] {
@@ -390,11 +390,28 @@ final class SwiftViewBuilder {
             }
             return SwiftImportElement("."+name,args:args,children:children,reference:ref)
         }
-        if let function=index.viewExtensions.members[name],!active.contains("modifier."+name) {
+        func isText(_ e:SwiftImportElement)->Bool {e.type=="Text" || (e.type.hasPrefix(".") && e.children.first.map(isText)==true)}
+        let extensionFunction=(isText(element) ? index.textExtensions.members[name]:nil) ?? index.viewExtensions.members[name]
+        if let function=extensionFunction,!active.contains("modifier."+name),active.count<40 {
             var environment=context
             environment.values.merge(function.defaults){_,new in new}
             for (i,param) in function.parameters.enumerated() {if let value=args[param] ?? args["$\(i)"]{environment.values[param]=value}}
             let tokens=SwiftSourceSyntax.compact(function.body)
+            // Only a single, explicit modifier chain is accepted here. Do not
+            // interpret arbitrary extension bodies or execute their source.
+            var cursor=tokens.first?.text=="return" ? 1:0
+            if cursor<tokens.count,tokens[cursor].text=="self" {cursor+=1;if cursor<tokens.count,tokens[cursor].text=="."{cursor+=1}}
+            var chain:[SwiftImportCall]=[]
+            while cursor<tokens.count {
+                guard let part=call(tokens,&cursor),supported.contains(part.name) || ["truncationMode","allowsTightening"].contains(part.name) else{chain=[];break}
+                chain.append(part)
+                if cursor==tokens.count{break}
+                guard tokens[cursor].text=="." else{chain=[];break};cursor+=1
+            }
+            if !chain.isEmpty,cursor==tokens.count {
+                active.append("modifier."+name);defer{active.removeLast()}
+                return chain.reduce(element){modify($0,$1,context:environment)}
+            }
             if let start=tokens.firstIndex(where:{$0.text=="modifier"}),start+1<tokens.count,tokens[start+1].text=="(" {
                 var position=start+2
                 if let instance=call(tokens,&position),let definition=index.modifiers[instance.name],let body=definition.members["body"] {

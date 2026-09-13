@@ -146,3 +146,10 @@ Agents can pass `values` and `colors` to `inspect_ui_project` / `inspect_swift_p
 Beta.6 inspect/import tools also accept `canvas: {"width": 402, "height": 874}` and `topInset: 62` to compute against a known reference. Use actual target-device/reference values. Write the report's `device` alongside `pages` and `templates`. Nodes support `gradient`, `blurRadius`, `shadowColor`, `shadowX`, `shadowY`, `backgroundLayer` and `visibleVariants`. A gradient contains `kind` (linear/radial), `stops` (color/location), startX/startY/endX/endY and startRadius/endRadius. Consult the catalog and current project for field examples.
 
 Render a native static preview with `FrameStudio --render-preview --project FILE --output preview.png --page 0 --variant standardPortrait --offset 0`. It renders only the specified design; it neither starts original source projects nor creates mobile packages. Page indices are zero-based; offset scrolls the content.
+
+
+## Beta.7 rendering properties
+
+`update_component.properties` accepts `lineLimit` (1–1000, null for unlimited), `lineSpacing` (0–500 pt), `minimumScaleFactor` (0.1–1), `imageFit` (fill / fit / stretch), and `material` (ultraThin / thin / regular / thick / ultraThick; null disables it). Optional fields preserve legacy documents and can be cleared with null. See the user guide and export report for the Android material fallback.
+
+`clipMasks` maps variant names to arrays of at most 32 masks. Each contains `shape` (rectangle / roundedRectangle / ellipse), `rect: {x,y,width,height}`, and `radius`. Rect coordinates use the node width/height as units; radius uses its shorter side. Coordinates may extend beyond 0–1 to retain ancestor boundaries. Masks intersect and follow node moves/resizes. Clear retained clipping with `clipMasks: null`. Existing expectedRevision checks and atomic writes apply to all added properties.

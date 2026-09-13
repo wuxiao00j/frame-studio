@@ -1,6 +1,13 @@
 import Foundation
 
 extension SwiftImportLayout {
+    func material(_ value:[SwiftToken]?,depth:Int=0)->String? {
+        guard let value,depth<12 else{return nil}
+        let key=SwiftSourceSyntax.text(resolved(value))
+        if key.hasPrefix("AnyShapeStyle("){return material(arguments(value)["$0"],depth:depth+1)}
+        for name in ["ultraThin","thin","regular","thick","ultraThick"] where key=="."+name+"Material" || key=="Material."+name {return name}
+        return nil
+    }
     func unitPoint(_ value:[SwiftToken]?,fallback:(Double,Double))->(Double,Double) {
         guard let value else{return fallback}
         let key=SwiftSourceSyntax.text(value),args=arguments(value)
@@ -31,7 +38,9 @@ extension SwiftImportLayout {
         return (try? result.validate()) != nil ? result:nil
     }
     func paint(_ value:[SwiftToken]?,on node:inout DesignNode,reference:String) {
-        if let gradient=gradient(value){node.gradient=gradient;node.fill=gradient.stops.first!.color}
+        node.material=nil;node.gradient=nil
+        if let material=material(value){node.material=material;node.gradient=nil;node.fill="FFFFFF00"}
+        else if let gradient=gradient(value){node.gradient=gradient;node.fill=gradient.stops.first!.color}
         else if let color=color(value){node.fill=color;node.gradient=nil}
         else if SwiftSourceSyntax.text(value ?? []).contains("opacity") {node.fill="FFFFFF00";builder.warn("动态透明度未确定，装饰色暂按透明处理",reference)}
         else{node.fill="F2F2F7";builder.warn("填充表达式仍需提供运行时值",reference)}

@@ -24,6 +24,7 @@ public enum ProjectStore {
         }
         let pages=Set(p.pages.map(\.id))
         for n in nodes {
+            try n.validateRendering()
             try n.gradient?.validate()
             if let variants=n.visibleVariants, !variants.allSatisfy({Variant(rawValue:$0) != nil}){throw StudioError.invalid("组件可见布局无效")}
             if let color=n.shadowColor{try validateColor(color)}

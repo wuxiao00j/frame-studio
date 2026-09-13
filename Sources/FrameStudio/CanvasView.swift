@@ -77,7 +77,7 @@ import UniformTypeIdentifiers
     var rect:Rect {node.frame(variant,device:session.project.device)}
     var selected:Bool {session.selection.contains(node.id) && session.variant==variant && !session.preview}
     var body:some View {
-        ComponentPreview(node:node,corners:session.page.corners(node,variant:variant,device:session.project.device),activePage:session.pageID,interactive:session.preview,navigate:session.selectPage,openSidebar:{session.sidebarOpen.toggle()})
+        ComponentPreview(node:node,corners:session.page.corners(node,variant:variant,device:session.project.device),variant:variant,activePage:session.pageID,interactive:session.preview,navigate:session.selectPage,openSidebar:{session.sidebarOpen.toggle()})
             .allowsHitTesting(session.preview || node.kind == .tabBar || node.kind == .sidebar)
             .frame(width:rect.width,height:rect.height)
             .overlay{if !session.preview && node.kind != .tabBar && node.kind != .sidebar {Color.clear.contentShape(Rectangle())}}

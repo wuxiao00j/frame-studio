@@ -41,6 +41,16 @@ source=folder/'Legacy.dart';source.write_text("import 'package:flutter/material.
 report=tool('inspect_ui_project',{'path':str(source)})
 assert any(c['componentKind']=='toggle' for c in report['classifications'])
 assert any(c['typeName']=='AwesomeNebulaPanel' for c in report['unmatched'])
+text_node=add('text')
+rendering={'lineLimit':2,'lineSpacing':5,'minimumScaleFactor':0.7,'imageFit':'fit','material':'thin','clipMasks':{'standardPortrait':[{'shape':'ellipse','rect':{'x':0,'y':0,'width':1,'height':1},'radius':0}]}}
+design=tool('update_component',{'nodeID':text_node,'properties':rendering,'expectedRevision':design['revision']})
+actual=design['pages'][-1]['nodes'][-1]
+assert all(actual[k]==v for k,v in rendering.items())
+before=project.read_bytes()
+invalid=rpc('tools/call',{'name':'update_component','arguments':{'nodeID':text_node,'properties':{'minimumScaleFactor':0},'expectedRevision':design['revision']}})
+assert invalid['isError'] and project.read_bytes()==before
+design=tool('update_component',{'nodeID':text_node,'properties':{k:None for k in rendering},'expectedRevision':design['revision']})
+assert all(k not in design['pages'][-1]['nodes'][-1] for k in rendering)
 paths={}
 for fmt in ['swiftui','flutter','android']:
  paths[fmt]=tool('export_project',{'format':fmt,'directory':str(folder)})['directory']

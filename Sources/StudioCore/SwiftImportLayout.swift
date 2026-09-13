@@ -9,6 +9,7 @@ struct SwiftImportStyle {
     var alignment="leading"
     var lineSpacing:Double=0
     var lineLimit:Int?
+    var minimumScaleFactor:Double=1
 }
 struct SwiftImportBox {
     var width:Double
@@ -84,6 +85,7 @@ final class SwiftImportLayout {
         n.id=element.id;n.name=kind.title+" · "+element.type;n.sourceReference=element.reference+" · "+element.type
         n.fontSize=style.font;n.fontWeight=style.weight;n.foreground=style.foreground;n.accent=style.accent
         n.textAlignment=style.alignment;n.padding=0;n.cornerRadius=0;n.fill="FFFFFF00";n.fixedToViewport=element.pinned;n.backgroundLayer=element.pinned
+        if kind == .text {n.lineLimit=style.lineLimit;n.lineSpacing=style.lineSpacing;n.minimumScaleFactor=style.minimumScaleFactor}
         return n
     }
     func layout(_ e:SwiftImportElement,width:Double,height:Double?=nil,style:SwiftImportStyle=SwiftImportStyle())->SwiftImportBox {
@@ -133,24 +135,43 @@ final class SwiftImportLayout {
                     decoration+=drawn.nodes
                 }
                 box.nodes=e.type==".background" ? decoration+box.nodes:box.nodes+decoration;return box
-            case ".clipShape",".cornerRadius":
+            case ".clipShape",".cornerRadius",".clipped":
                 var box=layout(child,width:width,height:height,style:style)
-                let shape=args["$0"] ?? [],radius=number(args["$0"]) ?? number(arguments(shape)["cornerRadius"]) ?? (SwiftSourceSyntax.text(shape).contains("Circle") || SwiftSourceSyntax.text(shape).contains("Capsule") ? min(box.width,box.height)/2:0)
-                for i in box.nodes.indices where [.rectangle,.circle,.image,.avatar,.button].contains(box.nodes[i].kind) && abs(rect(box.nodes[i]).width-box.width)<1 && abs(rect(box.nodes[i]).height-box.height)<1 && abs(rect(box.nodes[i]).x)<1 && abs(rect(box.nodes[i]).y)<1 {box.nodes[i].cornerRadius=max(0,min(500,radius))};return box
+                let shape=args["$0"] ?? [],name=SwiftSourceSyntax.text(shape)
+                guard e.type != ".clipShape" || ["Rectangle(","RoundedRectangle(","Circle(","Ellipse(","Capsule("].contains(where:{name.hasPrefix($0)}) else{builder.warn("自定义裁剪形状需要对照原界面调整",e.reference);return box}
+                let radius=number(args["$0"]) ?? number(arguments(shape)["cornerRadius"]) ?? (name.contains("Capsule") ? min(box.width,box.height)/2:0)
+                var bounds=Rect(0,0,max(1,box.width),max(1,box.height))
+                if name.hasPrefix("Circle("){let d=min(bounds.width,bounds.height);bounds=Rect((bounds.width-d)/2,(bounds.height-d)/2,d,d)}
+                let maskShape=name.hasPrefix("Circle(") || name.hasPrefix("Ellipse(") ? "ellipse":radius>0 ? "roundedRectangle":"rectangle"
+                for i in box.nodes.indices {
+                    let r=rect(box.nodes[i])
+                    let mask=DesignClipMask(shape:maskShape,rect:Rect((bounds.x-r.x)/r.width,(bounds.y-r.y)/r.height,bounds.width/r.width,bounds.height/r.height),radius:radius/min(r.width,r.height))
+                    var masks=box.nodes[i].clipMasks?[Variant.standardPortrait.rawValue] ?? []
+                    if masks.count<32{masks.append(mask)}else{builder.warn("裁剪嵌套超过 32 层，需人工简化",e.reference)}
+                    box.nodes[i].clipMasks=[Variant.standardPortrait.rawValue:masks]
+                    if maskShape != "ellipse",[.rectangle,.circle,.image,.avatar,.button].contains(box.nodes[i].kind),abs(r.width-box.width)<1,abs(r.height-box.height)<1,abs(r.x)<1,abs(r.y)<1{box.nodes[i].cornerRadius=max(0,min(500,radius))}
+                };return box
             case ".fill",".stroke",".strokeBorder":
                 var box=layout(child,width:width,height:height,style:style)
                 let c=color(args["$0"]) ?? (args["$0"]==nil ? style.foreground:"F2F2F7")
-                if args["$0"] != nil && color(args["$0"])==nil && gradient(args["$0"])==nil{builder.warn("动态填充色未确定，使用中性占位色",e.reference)}
+                if args["$0"] != nil && color(args["$0"])==nil && gradient(args["$0"])==nil && material(args["$0"])==nil{builder.warn("动态填充色未确定，使用中性占位色",e.reference)}
                 for i in box.nodes.indices {
-                    if e.type==".fill" {paint(args["$0"],on:&box.nodes[i],reference:e.reference)}else{box.nodes[i].fill="FFFFFF00";box.nodes[i].borderColor=c;box.nodes[i].borderWidth=max(0,min(100,number(args["lineWidth"]) ?? 1))}
+                    if e.type==".fill" {paint(args["$0"],on:&box.nodes[i],reference:e.reference)}else{box.nodes[i].fill="FFFFFF00";box.nodes[i].gradient=nil;box.nodes[i].material=nil;box.nodes[i].borderColor=c;box.nodes[i].borderWidth=max(0,min(100,number(args["lineWidth"]) ?? 1))}
                 };return box
             case ".opacity":var box=layout(child,width:width,height:height,style:style);for i in box.nodes.indices{box.nodes[i].opacity*=max(0,min(1,number(args["$0"]) ?? 1))};return box
             case ".shadow":
                 var box=layout(child,width:width,height:height,style:style)
                 if !box.nodes.isEmpty{box.nodes[0].shadow=max(0,min(100,number(args["radius"]) ?? 0));box.nodes[0].shadowColor=color(args["color"]);box.nodes[0].shadowX=number(args["x"]) ?? 0;box.nodes[0].shadowY=number(args["y"]) ?? 0};return box
             case ".blur":var box=layout(child,width:width,height:height,style:style);for i in box.nodes.indices{box.nodes[i].blurRadius=max(0,min(500,number(args["radius"]) ?? 0))};return box
-            case ".lineSpacing":style.lineSpacing=max(0,number(args["$0"]) ?? 0);return layout(child,width:width,height:height,style:style)
-            case ".lineLimit":style.lineLimit=number(args["$0"]).map{max(1,Int($0))};return layout(child,width:width,height:height,style:style)
+            case ".lineSpacing":style.lineSpacing=max(0,min(500,number(args["$0"]) ?? 0));return layout(child,width:width,height:height,style:style)
+            case ".lineLimit":style.lineLimit=number(args["$0"]).map{Int(max(1,min(1000,$0)))};return layout(child,width:width,height:height,style:style)
+            case ".minimumScaleFactor":style.minimumScaleFactor=max(0.1,min(1,number(args["$0"]) ?? 1));return layout(child,width:width,height:height,style:style)
+            case ".scaledToFit",".scaledToFill",".resizable",".aspectRatio":
+                var box=layout(child,width:width,height:height,style:style)
+                let mode=SwiftSourceSyntax.text(args["contentMode"] ?? [])
+                let fit=e.type==".scaledToFit" || mode==".fit" ? "fit":e.type==".resizable" ? "stretch":"fill"
+                for i in box.nodes.indices where box.nodes[i].kind == .image {box.nodes[i].imageFit=fit;if let height{var r=rect(box.nodes[i]);r.width=width;r.height=height;box.nodes[i].frames[Variant.standardPortrait.rawValue]=r;box.width=width;box.height=height}}
+                return box
             case ".fixedSize", ".layoutPriority":return layout(child,width:width,height:height,style:style)
             case ".buttonStyle":
                 var box=layout(child,width:width,height:height,style:style)
@@ -227,13 +248,16 @@ final class SwiftImportLayout {
         if e.type=="Unresolved"{kind = .custom}
         var w=min(width,345),h=44.0
         if kind == .text {
-            let f=NSFont.systemFont(ofSize:style.font,weight:style.weight=="bold" ? .bold:style.weight=="semibold" ? .semibold:.regular)
-            let attributes:[NSAttributedString.Key:Any]=[.font:f]
+            let f=NSFont.systemFont(ofSize:style.font,weight:style.weight=="bold" ? .bold:style.weight=="semibold" ? .semibold:style.weight=="medium" ? .medium:.regular)
+            let paragraph=NSMutableParagraphStyle();paragraph.lineSpacing=style.lineSpacing;paragraph.lineBreakMode = .byWordWrapping
+            let attributes:[NSAttributedString.Key:Any]=[.font:f,.paragraphStyle:paragraph]
             let natural=(title as NSString).size(withAttributes:attributes)
             w=max(1,min(width,ceil(natural.width)))
-            h=max(style.font*1.25,ceil((title as NSString).boundingRect(with:CGSize(width:w,height:10000),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes).height))
-            let lines=max(1,ceil(h/(style.font*1.25)));h += max(0,lines-1)*style.lineSpacing
-            if let limit=style.lineLimit{h=min(h,Double(limit)*(style.font*1.25+style.lineSpacing))}
+            // Include paragraph spacing in font measurement. A small leading
+            // allowance avoids SwiftUI compressing a two-line fallback-font run.
+            let measured=ceil((title as NSString).boundingRect(with:CGSize(width:w,height:10000),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes).height)
+            h=max(style.font*1.3,measured+max(2,ceil(measured/(style.font*1.25+style.lineSpacing))))
+            if let limit=style.lineLimit{h=min(h,Double(limit)*(style.font*1.3+style.lineSpacing)+2)}
         }else if kind == .button {w=min(width,max(24,(title as NSString).size(withAttributes:[.font:NSFont.systemFont(ofSize:style.font)]).width+16));h=max(30,style.font*1.4)}
         else if kind == .icon {w=max(1,style.font);h=w}
         else if kind == .divider {h=1}

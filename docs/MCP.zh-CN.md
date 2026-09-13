@@ -146,3 +146,10 @@ Agent 可以向 `inspect_ui_project` / `inspect_swift_project`（以及对应 im
 Beta.6 的检查/导入工具还支持 `canvas: {"width": 402, "height": 874}` 和 `topInset: 62`，用于按已知参考画布计算布局；这些值应来自目标设备或原界面。报告的 `device` 应随 `pages`、`templates` 一起写入设计。节点支持 `gradient`、`blurRadius`、`shadowColor`、`shadowX`、`shadowY`、`backgroundLayer` 和 `visibleVariants`。渐变由 `kind`（linear/radial）、`stops`（color/location）、startX/startY/endX/endY 和 startRadius/endRadius 描述。使用 `list_components` 和当前项目检查字段。
 
 原生静态预览可执行 `FrameStudio --render-preview --project FILE --output preview.png --page 0 --variant standardPortrait --offset 0`。命令只渲染指定设计，不启动原项目或生成手机安装包。页面编号从 0 开始，offset 为滚动内容偏移。
+
+
+## Beta.7 渲染属性
+
+`update_component.properties` 支持 `lineLimit`（1–1000，null 不限行）、`lineSpacing`（0–500 pt）、`minimumScaleFactor`（0.1–1）、`imageFit`（fill / fit / stretch）和 `material`（ultraThin / thin / regular / thick / ultraThick，null 关闭）。字段仍为可选，旧文件兼容；传 null 可清除。材质的 Android 回退见使用指南和导出报告。
+
+`clipMasks` 是布局名到裁剪数组的字典，每种布局最多 32 层。每层包含 `shape`（rectangle / roundedRectangle / ellipse）、`rect: {x,y,width,height}` 和 `radius`。rect 以当前图层宽高为单位，radius 以图层短边为单位；坐标可超出 0–1，以保留父容器边界。所有层取交集。图层移动或缩放时裁剪跟随；解除裁剪用 `clipMasks: null`。新增属性遵循现有 expectedRevision 和原子写入约定。

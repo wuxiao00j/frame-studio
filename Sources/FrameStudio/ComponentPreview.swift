@@ -17,6 +17,7 @@ let studioLine=Color(hex:"EAE7F0")
 @MainActor struct ComponentPreview: View {
     let node:DesignNode
     var corners:CornerRadii?
+    var variant:Variant = .standardPortrait
     var activePage=""
     var interactive=false
     var navigate:(String)->Void={_ in}
@@ -37,6 +38,7 @@ let studioLine=Color(hex:"EAE7F0")
             .overlay(shape.stroke(Color(hex:node.borderColor),lineWidth:node.borderWidth))
             .shadow(color:Color(hex:node.shadowColor ?? (node.shadow>0 ? "00000017":"00000000")),radius:node.shadow,x:node.shadowX ?? 0,y:node.shadowY ?? node.shadow/3)
             .blur(radius:node.blurRadius ?? 0)
+            .modifier(ImportedMaskModifier(masks:node.masks(in:variant)))
             .opacity(node.opacity)
             .rotationEffect(.degrees(node.rotation))
             .onTapGesture{if interactive && !node.targetPageID.isEmpty && [.text,.icon,.image,.avatar,.rectangle,.circle,.spacer,.qrCode,.chevron,.profileRow,.card,.statistic,.alertBanner].contains(node.kind){navigate(node.targetPageID)}}
@@ -46,7 +48,7 @@ let studioLine=Color(hex:"EAE7F0")
     }
     @ViewBuilder var content:some View {
         switch node.kind {
-        case .text: Text(node.text).multilineTextAlignment(node.textAlignment=="center" ? .center : node.textAlignment=="trailing" ? .trailing : .leading).frame(maxWidth:.infinity,alignment:alignment)
+        case .text: Text(node.text).lineLimit(node.lineLimit).lineSpacing(node.lineSpacing ?? 0).minimumScaleFactor(node.minimumScaleFactor ?? 1).multilineTextAlignment(node.textAlignment=="center" ? .center : node.textAlignment=="trailing" ? .trailing : .leading).frame(maxWidth:.infinity,alignment:alignment)
         case .icon: icon.frame(maxWidth:.infinity)
         case .iconButton: Button(action:openSidebar){icon.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
         case .button: Button{navigate(node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize)};if node.hasLabel{Text(node.text)}}.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
@@ -74,7 +76,10 @@ let studioLine=Color(hex:"EAE7F0")
         if let image=PreviewImages.image(node.iconData ?? node.imageData) {Image(nsImage:image).resizable().scaledToFit().frame(width:node.iconSize,height:node.iconSize)}else{Image(systemName:node.symbol).font(.system(size:node.iconSize))}
     }
     @ViewBuilder var media:some View {
-        if let image=PreviewImages.image(node.imageData){Image(nsImage:image).resizable().scaledToFill().clipped()}
+        if let image=PreviewImages.image(node.imageData){
+            if node.imageFit=="stretch"{Image(nsImage:image).resizable()}
+            else{Image(nsImage:image).resizable().aspectRatio(contentMode:node.imageFit=="fit" ? .fit:.fill).clipped()}
+        }
         else{ZStack{Color(hex:node.fill);Image(systemName:node.symbol).font(.system(size:node.iconSize+12)).foregroundStyle(Color(hex:node.accent).opacity(0.6))}}
     }
     var avatar:some View {media.clipShape(RoundedRectangle(cornerRadius:node.avatarSize/3)).aspectRatio(1,contentMode:.fit)}

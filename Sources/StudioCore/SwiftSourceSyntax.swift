@@ -117,6 +117,7 @@ struct SwiftViewIndex {
     var modifiers:[String:SwiftViewDefinition]=[:]
     var layouts=Set<String>()
     var viewExtensions=SwiftViewDefinition(name:"View",file:"",line:1)
+    var textExtensions=SwiftViewDefinition(name:"Text",file:"",line:1)
     var constants:[String:[SwiftToken]]=[:]
     var functions:[String:SwiftViewMember]=[:]
     var valueDefaults:[String:[String:[SwiftToken]]]=[:]
@@ -138,6 +139,7 @@ struct SwiftViewIndex {
                 guard let open=(i+2..<t.count).first(where:{t[$0].text=="{"}) else{break}
                 let close=SwiftSourceSyntax.end(t,open),header=Array(t[i..<open]),body=Array(t[(open+1)..<close])
                 if isExtension && extensions,name=="View" {readMembers(body,into:&viewExtensions)}
+                else if isExtension && extensions,name=="Text" {readMembers(body,into:&textExtensions)}
                 else if isExtension && extensions, var view=views[name] {readMembers(body,into:&view);views[name]=view}
                 else if !isExtension && !extensions {
                     var view=SwiftViewDefinition(name:name,file:file,line:t[i].line)

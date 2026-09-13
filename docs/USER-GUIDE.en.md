@@ -62,3 +62,12 @@ Exports contain source pages, assets, project configuration, `Design.framestudio
 Integrate SwiftUI using the local package or source files, Compose using Kotlin pages and assets, or Flutter using Dart files and assets. Read the handoff and platform-difference notes first.
 
 [Agent / MCP installation and usage](MCP.en.md) · [中文](USER-GUIDE.zh-CN.md)
+
+
+## Clipping, text, images and materials
+
+Beta.7 retains nested rectangle, rounded-rectangle, circle / ellipse and capsule masks separately for each orientation. Masks move and scale with decomposed layers. Select a layer and use “导入的容器裁剪” to remove its retained masks; Undo restores them. Arbitrary custom Paths, gradient alpha masks and group compositing still need manual reconstruction.
+
+Text layers now expose line limits, line spacing and minimum font scale in “文字排版”. Image layers offer fill, fit and stretch in “图片显示”. Import expands supported Text / View extension modifier chains, retains these rules, and fixes conditional theme paints and multiline Chinese text measurement.
+
+“背景材质” within “渐变与柔化” offers five frosted-material levels. Mac previews and SwiftUI exports use system Material; Flutter uses backdrop blur; Android Compose uses a translucent fill, disclosed in the export report. These do not reproduce full system Liquid Glass refraction or interactive animations, and static PNGs cannot fully capture live materials. System text-size preferences, unspecified runtime states and complex layouts still require target-device comparison.

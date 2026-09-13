@@ -9,8 +9,12 @@ import StudioCore
     func numeric(_ key:WritableKeyPath<DesignNode,Double?>,_ fallback:Double=0)->Binding<Double> {Binding(get:{current[keyPath:key] ?? fallback},set:{value in session.updateNode(node.id){$0[keyPath:key]=value}})}
     var body:some View {
         InspectorSection(title:"渐变与柔化") {
+            Picker("背景材质",selection:Binding(get:{current.material ?? "none"},set:{v in session.updateNode(node.id){$0.material=v=="none" ? nil:v;if v != "none"{$0.gradient=nil}}})) {
+                Text("普通填充").tag("none");Text("极薄磨砂").tag("ultraThin");Text("薄磨砂").tag("thin");Text("标准磨砂").tag("regular");Text("厚磨砂").tag("thick");Text("极厚磨砂").tag("ultraThick")
+            }
+            if current.material != nil {Text("系统材质随背景变化；Android 导出使用半透明底色。").foregroundStyle(studioMuted)}
             Toggle("作为底层固定背景",isOn:Binding(get:{current.backgroundLayer==true},set:{value in session.updateNode(node.id){$0.backgroundLayer=value;if value{$0.fixedToViewport=true}}}))
-            Toggle("使用渐变填充",isOn:Binding(get:{current.gradient != nil},set:{enabled in session.updateNode(node.id){n in n.gradient=enabled ? DesignGradient(stops:[.init(color:n.fill,location:0),.init(color:n.accent,location:1)]):nil}}))
+            Toggle("使用渐变填充",isOn:Binding(get:{current.gradient != nil},set:{enabled in session.updateNode(node.id){n in n.gradient=enabled ? DesignGradient(stops:[.init(color:n.fill,location:0),.init(color:n.accent,location:1)]):nil;if enabled{n.material=nil}}}))
             if let g=current.gradient {
                 Picker("渐变类型",selection:Binding(get:{current.gradient?.kind ?? "linear"},set:{kind in change{$0.kind=kind}})){Text("线性").tag("linear");Text("径向").tag("radial")}
                 ForEach(g.stops.indices,id:\.self){i in

@@ -49,7 +49,7 @@ import AppKit
     let offset:Double
     var rect:Rect {node.frame(variant,device:device)}
     var body:some View {
-        ComponentPreview(node:node,corners:page.corners(node,variant:variant,device:device),activePage:page.id)
+        ComponentPreview(node:node,corners:page.corners(node,variant:variant,device:device),variant:variant,activePage:page.id)
             .frame(width:CGFloat(rect.width),height:CGFloat(rect.height))
             .position(x:CGFloat(rect.midX),y:CGFloat(rect.midY-(node.isFixed ? 0:offset)))
     }

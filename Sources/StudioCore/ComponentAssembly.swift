@@ -23,8 +23,8 @@ public enum ComponentAssembly {
         guard source.kind.decomposable else{return [source]}
         var result:[DesignNode]=[]
         func add(_ kind:ComponentKind,_ name:String,_ text:String="",_ symbol:String="",font:Double?=nil,asset:String?=nil,action:String="",layout:(Rect)->Rect) {
-            var node=DesignNode(kind:kind);node.name=name;node.text=text;node.symbol=symbol;node.fill="FFFFFF00";node.foreground=source.foreground;node.accent=source.accent;node.fontSize=font ?? source.fontSize;node.fontWeight=source.fontWeight;node.cornerRadius=0;node.padding=0;node.iconSize=source.iconSize;node.opacity=source.opacity;node.blurRadius=source.blurRadius;node.backgroundLayer=source.backgroundLayer;node.rotation=source.rotation;node.fixedToViewport=source.isFixed;node.targetPageID=action.isEmpty ? source.targetPageID:action;node.iconData=asset
-            if kind == .rectangle {node.fill=source.fill;node.gradient=source.gradient;node.shadowColor=source.shadowColor;node.shadowX=source.shadowX;node.shadowY=source.shadowY;node.borderColor=source.borderColor;node.borderWidth=source.borderWidth;node.cornerRadius=source.cornerRadius;node.shadow=source.shadow;node.rowGroupID=source.rowGroupID}
+            var node=DesignNode(kind:kind);node.name=name;node.text=text;node.symbol=symbol;node.fill="FFFFFF00";node.foreground=source.foreground;node.accent=source.accent;node.fontSize=font ?? source.fontSize;node.fontWeight=source.fontWeight;node.cornerRadius=0;node.padding=0;node.iconSize=source.iconSize;node.opacity=source.opacity;node.blurRadius=source.blurRadius;node.visibleVariants=source.visibleVariants;node.backgroundLayer=source.backgroundLayer;node.rotation=source.rotation;node.fixedToViewport=source.isFixed;node.targetPageID=action.isEmpty ? source.targetPageID:action;node.iconData=asset
+            if kind == .rectangle {node.fill=source.fill;node.gradient=source.gradient;node.material=source.material;node.shadowColor=source.shadowColor;node.shadowX=source.shadowX;node.shadowY=source.shadowY;node.borderColor=source.borderColor;node.borderWidth=source.borderWidth;node.cornerRadius=source.cornerRadius;node.shadow=source.shadow;node.rowGroupID=source.rowGroupID}
             if kind == .avatar {node.imageData=source.imageData;node.avatarSize=source.avatarSize;node.cornerRadius=source.avatarSize/3;node.fill=source.accent+"22"}
             if kind == .switchControl {node.isOn=source.isOn;node.showLabel=false}
             for variant in Variant.allCases {
@@ -32,6 +32,15 @@ public enum ComponentAssembly {
                 let dx=local.midX-r.width/2,dy=local.midY-r.height/2
                 let cx=r.midX+dx*cos(angle)-dy*sin(angle),cy=r.midY+dx*sin(angle)+dy*cos(angle)
                 node.frames[variant.rawValue]=Rect(cx-local.width/2,cy-local.height/2,local.width,local.height)
+            }
+            if source.clipMasks != nil {
+                node.clipMasks=[:]
+                for variant in Variant.allCases {
+                    let r=source.frame(variant,device:device),local=layout(r)
+                    node.clipMasks?[variant.rawValue]=source.masks(in:variant).map{m in
+                        DesignClipMask(shape:m.shape,rect:Rect((m.rect.x*r.width-local.x)/local.width,(m.rect.y*r.height-local.y)/local.height,m.rect.width*r.width/local.width,m.rect.height*r.height/local.height),radius:m.radius*min(r.width,r.height)/min(local.width,local.height))
+                    }
+                }
             }
             result.append(node)
         }

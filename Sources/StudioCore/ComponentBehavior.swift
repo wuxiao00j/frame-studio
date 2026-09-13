@@ -5,7 +5,7 @@ public struct CornerRadii:Codable,Equatable,Sendable {
     public init(_ radius:Double){tl=radius;tr=radius;bl=radius;br=radius}
 }
 public extension DesignNode {
-    static let optionalFieldKeys:Set<String> = ["visibleVariants","backgroundLayer","gradient","blurRadius","shadowColor","shadowX","shadowY","flutterCode","composeCode","showIcon","showLabel","showQRCode","showChevron","controlPosition","navigationAction","syncTabIcons","iconData","qrIconData","chevronIconData","trailingSymbol","trailingIconData","progressStyle","progressLabel","progressCurrent","progressTotal","progressThickness","progressSteps","trackColor","numberValue","minimumValue","maximumValue","stepValue","dateValue","fixedToViewport","rowGroupID"]
+    static let optionalFieldKeys:Set<String> = ["material","clipMasks","lineLimit","lineSpacing","minimumScaleFactor","imageFit","visibleVariants","backgroundLayer","gradient","blurRadius","shadowColor","shadowX","shadowY","flutterCode","composeCode","showIcon","showLabel","showQRCode","showChevron","controlPosition","navigationAction","syncTabIcons","iconData","qrIconData","chevronIconData","trailingSymbol","trailingIconData","progressStyle","progressLabel","progressCurrent","progressTotal","progressThickness","progressSteps","trackColor","numberValue","minimumValue","maximumValue","stepValue","dateValue","fixedToViewport","rowGroupID"]
     var isFixed:Bool {fixedToViewport ?? [.navigationBar,.tabBar].contains(kind)}
     func isVisible(in variant:Variant)->Bool {!hidden && (visibleVariants?.contains(variant.rawValue) ?? true)}
     var hasIcon:Bool {showIcon ?? ![.toggle,.checkbox,.radio,.switchControl,.text,.textField,.textButton,.outlinedButton,.textArea,.selectField].contains(kind)}
