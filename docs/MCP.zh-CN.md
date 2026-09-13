@@ -153,3 +153,10 @@ Beta.6 的检查/导入工具还支持 `canvas: {"width": 402, "height": 874}` �
 `update_component.properties` 支持 `lineLimit`（1–1000，null 不限行）、`lineSpacing`（0–500 pt）、`minimumScaleFactor`（0.1–1）、`imageFit`（fill / fit / stretch）和 `material`（ultraThin / thin / regular / thick / ultraThick，null 关闭）。字段仍为可选，旧文件兼容；传 null 可清除。材质的 Android 回退见使用指南和导出报告。
 
 `clipMasks` 是布局名到裁剪数组的字典，每种布局最多 32 层。每层包含 `shape`（rectangle / roundedRectangle / ellipse）、`rect: {x,y,width,height}` 和 `radius`。rect 以当前图层宽高为单位，radius 以图层短边为单位；坐标可超出 0–1，以保留父容器边界。所有层取交集。图层移动或缩放时裁剪跟随；解除裁剪用 `clipMasks: null`。新增属性遵循现有 expectedRevision 和原子写入约定。
+
+
+## Beta.8
+
+`controlStyle` 为 `standard` 或 `formRow`；formRow 用于 textField、textArea、dateField、selectField。`selectedIndex` 是从 0 开始的默认选项序号；显示时限制在现有选项范围内。`isEnabled: false` 禁止原型交互并显示禁用状态。三个属性均可通过 update_component 修改、用 null 清除，并保留 expectedRevision 和原子写入检查。
+
+枚举选项与 State(initialValue:) 默认值会自动参与静态解析。日期等运行值仍应从真实界面核对，再通过 values 提供；不要把未解析数据猜成业务事实。只包含 dismiss() 的按钮支持原型返回，保存等业务闭包不执行。

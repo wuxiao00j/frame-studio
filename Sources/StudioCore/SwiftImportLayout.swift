@@ -10,6 +10,8 @@ struct SwiftImportStyle {
     var lineSpacing:Double=0
     var lineLimit:Int?
     var minimumScaleFactor:Double=1
+    var inForm=false
+    var formRowFill="FFFFFF"
 }
 struct SwiftImportBox {
     var width:Double
@@ -94,6 +96,11 @@ final class SwiftImportLayout {
         if e.type.hasPrefix(".") {
             guard let child=e.children.first else{return SwiftImportBox(width:0,height:0)}
             switch e.type {
+            case ".listRowBackground":style.formRowFill=color(args["$0"]) ?? style.formRowFill;return layout(child,width:width,height:height,style:style)
+            case ".disabled":
+                var box=layout(child,width:width,height:height,style:style)
+                if let disabled=builder.boolean(SwiftSourceSyntax.text(args["$0"] ?? [])){for i in box.nodes.indices{box.nodes[i].isEnabled = !disabled}}
+                return box
             case ".font":font(args["$0"] ?? [],&style);return layout(child,width:width,height:height,style:style)
             case ".fontWeight":style.weight=SwiftSourceSyntax.text(args["$0"] ?? []).replacingOccurrences(of:".",with:"");return layout(child,width:width,height:height,style:style)
             case ".bold":style.weight="bold";return layout(child,width:width,height:height,style:style)
@@ -128,6 +135,8 @@ final class SwiftImportLayout {
                 if let value=args["$0"] {
                     var background=node(e,kind:.rectangle,style:style,width:box.width,height:box.height)
                     paint(value,on:&background,reference:e.reference);background.name="背景";decoration=[background]
+                    func containsForm(_ e:SwiftImportElement)->Bool{e.type=="Form" || e.children.contains(where:containsForm)}
+                    if e.type==".background",containsForm(child){decoration[0].fixedToViewport=true;decoration[0].backgroundLayer=true}
                 }
                 for element in e.children.dropFirst() {
                     var drawn=layout(element,width:max(1,box.width),height:box.height,style:style)
@@ -187,6 +196,9 @@ final class SwiftImportLayout {
             default:return layout(child,width:width,height:height,style:style)
             }
         }
+        if e.type=="Form"{return form(e,width:width,height:height,style:style)}
+        if e.type=="Section",style.inForm{return section(e,width:width,style:style)}
+        if ["NavigationStack","NavigationView"].contains(e.type),let box=navigation(e,width:width,height:height,style:style){return box}
         if e.type=="FlowLayout" {
             let spacing=number(args["spacing"]) ?? 8,rowSpacing=number(args["rowSpacing"]) ?? spacing
             var x=0.0,y=0.0,rowHeight=0.0,nodes:[DesignNode]=[]
@@ -243,6 +255,7 @@ final class SwiftImportLayout {
         if e.type=="Spacer" {return SwiftImportBox(width:max(0,number(args["minLength"]) ?? 0),height:max(0,number(args["minLength"]) ?? 0))}
         let title=["Color","Rectangle","RoundedRectangle","Circle","Capsule","LinearGradient","RadialGradient"].contains(e.type) ? "":text(args["$0"] ?? args["title"],reference:e.reference)
         var kind=SwiftImporter.mappings[e.type] ?? .rectangle
+        if e.type=="TextField",SwiftSourceSyntax.text(args["axis"] ?? [])==".vertical"{kind = .textArea}
         if e.type=="Image",args["systemName"] != nil {kind = .icon}
         if e.type=="ProgressView",args["value"]==nil {kind = .loading}
         if e.type=="Unresolved"{kind = .custom}
@@ -266,6 +279,9 @@ final class SwiftImportLayout {
         else if kind == .image {h=160}
         else if kind == .custom {h=54}
         var n=node(e,kind:kind,style:style,width:w,height:h);n.text=title
+        if SwiftSourceSyntax.text(args["_navigationBack"] ?? [])=="true"{n.navigationAction="back"}
+        if style.inForm,[.textField,.textArea,.dateField,.selectField].contains(kind){n.controlStyle="formRow";n.borderWidth=0;n.padding=0;w=width;h=kind == .textArea ? 58:32;n.frames["standardPortrait"]=Rect(0,0,w,h)}
+        if kind == .dateField,let date=args["selection"]?.first.flatMap(SwiftSourceSyntax.literal),date.range(of:"^\\d{4}-\\d{2}-\\d{2}$",options:.regularExpression) != nil{n.dateValue=date}
         if kind == .button {n.showIcon=false;n.foreground=style.foreground=="222222" ? style.accent:style.foreground}
         if kind == .icon {n.symbol=text(args["systemName"],reference:e.reference);n.iconSize=max(1,min(500,style.font))}
         if kind == .iconLabel {n.text=text(args["$0"],reference:e.reference);n.symbol=text(args["systemImage"],reference:e.reference);n.iconSize=style.font}
@@ -296,6 +312,11 @@ final class SwiftImportLayout {
         if e.type=="Picker" {
             let labels=e.children.flatMap{layout($0,width:width,style:style).nodes}.filter{$0.kind == .text}.map(\.text)
             n.items=(labels.isEmpty ? ["〈动态选项〉"]:labels).map{NavigationItem(title:$0,symbol:"")}
+            var tags:[String]=[]
+            func collect(_ item:SwiftImportElement){if item.type==".tag"{tags.append(SwiftSourceSyntax.text(item.args["$0"] ?? []))}else{item.children.forEach(collect)}}
+            e.children.forEach(collect)
+            let value=SwiftSourceSyntax.text(args["selection"] ?? [])
+            n.selectedIndex=tags.firstIndex{builder.boolean($0+"=="+value)==true} ?? 0
             if labels.isEmpty{builder.warn("选择器选项来自动态数据，需补充",e.reference)}
         }
         return SwiftImportBox(width:w,height:h,nodes:[n])

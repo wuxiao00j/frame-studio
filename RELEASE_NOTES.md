@@ -1,20 +1,18 @@
-# 原境 · Frame Studio v1.2.0-beta.7
+# 原境 · Frame Studio v1.2.0-beta.8
 
 ## 中文 · Beta 测试版
 
 公开 Beta 更新（包含之前版本功能）：原生 SwiftUI Mac UI 设计器，支持 43 种组件、长页面、标准 / 阔屏布局、图标上传、Tab 双态图标、自定义组合，以及旧 UI 源码分类导入。
 
-图层列表支持单独选择组合成员、Shift 多选，并显示文字摘要；不必先解除整个组合。
+本次补齐 SwiftUI 表单导入：识别无关联值枚举的 allCases、rawValue 与静态标签，读取 State(initialValue:) 默认状态，解析常见布尔组合和空值回退。修正选项显示变量名、选中状态丢失、错误展示条件提示的问题。
 
-Beta.7 保留矩形、圆角矩形、圆形 / 椭圆和胶囊的嵌套裁剪，横竖屏独立存储。裁剪边界随拆分图层移动、缩放；选择图层后可在“导入的容器裁剪”中解除，并用撤销恢复。任意自定义 Path、渐变透明度蒙版和组合级混合效果仍需人工还原。
+Form / Section 保留常见分组卡片、标题、内边距和行分隔线；顶部导航标题与左右工具栏按钮转换成可编辑图层。多行输入按 axis 转换，新增“手机表单行”样式、默认选项与“启用交互”属性；日期值可使用 Agent 提供的运行对照值。简单 dismiss() 转换为原型返回，保存等业务处理不会执行或自动实现。
 
-文字组件新增“文字排版”：限制行数、行间距和最小字号比例。图片组件新增“图片显示”：填满裁剪、完整显示或拉伸。导入器展开支持的 Text / View 扩展修饰器链，保留这些规则，并修正主题条件颜色与中文多行测量。
-
-“渐变与柔化”的“背景材质”提供五档磨砂。Mac 预览和 SwiftUI 源码使用系统 Material，Flutter 使用背景模糊；Android Compose 使用半透明底色替代，导出报告会说明差异。它们不等同于完整的系统 Liquid Glass 折射与交互动画，静态 PNG 也不能完整反映实时材质。系统字号偏好、未提供的运行状态和复杂布局仍需对照目标设备。
+新增属性同步至 Mac 预览、SwiftUI、Compose、Flutter 源码和 MCP。复杂自定义表单、未提供的日期或运行状态、平台字体与系统玻璃效果仍需对照调整。
 
 **导出只包含 UI 源码、资源、项目配置和设计文件，不生成 APK、AAB、IPA 或可安装手机 App。** 原型导航、开关和表单不代表业务功能已完成，后续仍需开发真实业务逻辑。
 
-- 下载 `FrameStudio-v1.2.0-beta.7-macOS-arm64.zip`，解压并将应用放到“应用程序”。
+- 下载 `FrameStudio-v1.2.0-beta.8-macOS-arm64.zip`，解压并将应用放到“应用程序”。
 - 需要 Apple Silicon 与 macOS 14+；Beta 使用临时签名，尚未公证。
 - Agent 可使用内置的 27 个本地 MCP 工具，安装与配置见 [中文 MCP 指南](https://github.com/wuxiao00j/frame-studio/blob/main/docs/MCP.zh-CN.md)。
 - [中文使用指南](https://github.com/wuxiao00j/frame-studio/blob/main/docs/USER-GUIDE.zh-CN.md)。
@@ -26,17 +24,15 @@ Beta.7 保留矩形、圆角矩形、圆形 / 椭圆和胶囊的嵌套裁剪，�
 
 An update to the public Beta of a native SwiftUI Mac UI designer, with 43 components, long pages, standard / wide layouts, uploaded icons, two-state Tab icons, reusable composites and source-based UI import classification.
 
-The layer list supports selecting individual group members, Shift multi-selection and text summaries without ungrouping.
+This update improves SwiftUI form import: it expands allCases, raw values and static labels from enums without associated values, reads State(initialValue:) defaults, and resolves common Boolean combinations and nil fallbacks. This fixes variable names shown as options, lost initial selection and incorrectly included conditional hints.
 
-Beta.7 retains nested rectangle, rounded-rectangle, circle / ellipse and capsule masks separately for each orientation. Masks move and scale with decomposed layers. Select a layer and use “导入的容器裁剪” to remove its retained masks; Undo restores them. Arbitrary custom Paths, gradient alpha masks and group compositing still need manual reconstruction.
+Common Form / Section groups retain cards, headings, insets and row separators. Navigation titles and leading/trailing toolbar buttons become editable layers. Vertical text fields become multiline inputs. Added mobile form-row styling, initial selection and enabled-state properties; date values can come from agent-supplied runtime references. A simple dismiss() becomes prototype back navigation; save handlers and other business logic are neither executed nor implemented.
 
-Text layers now expose line limits, line spacing and minimum font scale in “文字排版”. Image layers offer fill, fit and stretch in “图片显示”. Import expands supported Text / View extension modifier chains, retains these rules, and fixes conditional theme paints and multiline Chinese text measurement.
-
-“背景材质” within “渐变与柔化” offers five frosted-material levels. Mac previews and SwiftUI exports use system Material; Flutter uses backdrop blur; Android Compose uses a translucent fill, disclosed in the export report. These do not reproduce full system Liquid Glass refraction or interactive animations, and static PNGs cannot fully capture live materials. System text-size preferences, unspecified runtime states and complex layouts still require target-device comparison.
+Added properties work in Mac previews, SwiftUI, Compose and Flutter source exports, and MCP. Complex custom forms, unspecified dates or runtime states, platform font metrics and system glass effects still require visual comparison.
 
 **Exports contain UI source, assets, project configuration and design files only. They do not produce APK, AAB, IPA or installable mobile applications.** Prototype navigation, switches and forms are not completed business features. Production application logic remains development work.
 
-- Download `FrameStudio-v1.2.0-beta.7-macOS-arm64.zip`, unzip it and move the application into Applications.
+- Download `FrameStudio-v1.2.0-beta.8-macOS-arm64.zip`, unzip it and move the application into Applications.
 - Requires Apple Silicon and macOS 14+. The Beta is ad-hoc signed and not notarized.
 - Agents can use the 27 bundled local MCP tools. See the [English MCP guide](https://github.com/wuxiao00j/frame-studio/blob/main/docs/MCP.en.md).
 - [English user guide](https://github.com/wuxiao00j/frame-studio/blob/main/docs/USER-GUIDE.en.md).

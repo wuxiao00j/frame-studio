@@ -26,7 +26,8 @@ public extension DesignNode {
                 for mask in masks {try mask.validate()}
             }
         }
-        guard (1...1000).contains(lineLimit ?? 1),
+        guard ["standard","formRow"].contains(controlStyle ?? "standard"),(0...1000).contains(selectedIndex ?? 0),
+              (1...1000).contains(lineLimit ?? 1),
               (lineSpacing ?? 0).isFinite,(0...500).contains(lineSpacing ?? 0),
               (minimumScaleFactor ?? 1).isFinite,(0.1...1).contains(minimumScaleFactor ?? 1),
               ["fill","fit","stretch"].contains(imageFit ?? "fill"),

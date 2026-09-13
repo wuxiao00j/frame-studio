@@ -33,3 +33,8 @@ Beta.7 adds coverage for nested ancestor masks in six variants, mask rebasing du
 Beta.7 local validation passed 78 Swift tests, 34 Flutter widget/unit checks, actual MCP acceptance (including rejected invalid writes and null resets), Kotlin compilation and generated SwiftUI type checking. The private imported draft was separately exported to all three UI source formats and its SwiftUI source type-checked. / Beta.7 本机通过 78 项 Swift 测试、34 项 Flutter 检查、真实 MCP 验收（包括无效写入拒绝与 null 清空）、Kotlin 编译及 SwiftUI 类型检查；私有导入草稿另外完成三平台源码导出与 SwiftUI 类型检查。
 
 Layer-list regression coverage verifies individual and Shift selection without changing group membership or the saved design. / 图层列表回归检查确认单选与 Shift 多选不会改变原有组合或保存文件。
+
+
+Beta.8 adds isolated regression fixtures for enum choices, ambiguous case names, initial selection, State initializers, false conditional hints, comparison text as data, form grouping, toolbar placement and disabled save actions. The native rendered form is compared with an explicitly opened original-app simulator form. Cross-platform checks include form-row controls, initial selection and disabled prototype navigation. / Beta.8 使用隔离样例检查枚举选项、重名枚举值、默认选中项、State 初始化、错误条件提示、比较符号文本、表单分组、工具栏位置与禁用保存按钮，并将原生渲染表单与按用户要求打开的模拟器表单对照；三平台检查包含表单行、初始选项和禁用的原型导航。
+
+Beta.8 local checks passed 82 Swift tests and 36 Flutter widget/unit checks, actual MCP acceptance, Kotlin compilation and SwiftUI source type checking. The private 37-page draft also passed three source exports and a SwiftUI type check. Hidden navigation and nil optional-date initialization have dedicated regression coverage. / Beta.8 本机通过 82 项 Swift 测试、36 项 Flutter 检查、真实 MCP 验收、Kotlin 编译及 SwiftUI 类型检查；37 页私有草稿另行通过三平台源码导出与 SwiftUI 类型检查，并覆盖隐藏导航和空值日期初始化。

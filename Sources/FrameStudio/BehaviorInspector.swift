@@ -6,7 +6,18 @@ import StudioCore
     let node:DesignNode
     func binding<T>(_ key:WritableKeyPath<DesignNode,T?>,_ fallback:T)->Binding<T>{Binding(get:{session.page.nodes.first{$0.id==node.id}?[keyPath:key] ?? fallback},set:{value in session.updateNode(node.id){$0[keyPath:key]=value}})}
     var body:some View {
-        InspectorSection(title:"页面中的行为") {Toggle("固定在屏幕上（不随页面滚动）",isOn:binding(\.fixedToViewport,node.isFixed)).font(.system(size:10))}
+        InspectorSection(title:"页面中的行为") {
+            Toggle("固定在屏幕上（不随页面滚动）",isOn:binding(\.fixedToViewport,node.isFixed)).font(.system(size:10))
+            Toggle("启用交互",isOn:binding(\.isEnabled,node.isEnabled ?? true)).font(.system(size:10))
+        }
+        if [.textField,.textArea,.selectField,.dateField].contains(node.kind) {
+            Picker("控件样式",selection:binding(\.controlStyle,node.controlStyle ?? "standard")){Text("标准").tag("standard");Text("手机表单行").tag("formRow")}.font(.system(size:10))
+        }
+        if node.kind == .selectField {
+            Picker("默认选项",selection:Binding(get:{node.selectedIndex ?? 0},set:{index in session.updateNode(node.id){$0.selectedIndex=index}})) {
+                ForEach(Array(node.items.enumerated()),id:\.element.id){index,item in Text(item.title).tag(index)}
+            }.font(.system(size:10))
+        }
         if [.toggle,.switchControl,.checkbox,.radio].contains(node.kind) {
             InspectorSection(title:"控件排布") {
                 Picker("按钮位置",selection:binding(\.controlPosition,node.position)){Text("靠左").tag("leading");Text("靠右").tag("trailing")}.pickerStyle(.segmented)

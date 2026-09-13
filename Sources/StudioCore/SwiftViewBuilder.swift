@@ -44,11 +44,29 @@ final class SwiftViewBuilder {
         pairs += options.colors.map{(key:SwiftSourceSyntax.compact(SwiftSourceSyntax.tokens($0.key)),value:SwiftSourceSyntax.tokens("Color(hex:\"\($0.value)\")"))}
         overrides=pairs.filter{!$0.key.isEmpty}.sorted{$0.key.count>$1.key.count}
     }
-    func boolean(_ value:String)->Bool? {
+    func boolean(_ value:String,depth:Int=0)->Bool? {
+        guard depth<48,value.count<16000 else{return nil}
+        let tokens=SwiftSourceSyntax.tokens(value)
+        if tokens.first?.text=="(",SwiftSourceSyntax.end(tokens,0)==tokens.count-1{return boolean(SwiftSourceSyntax.text(Array(tokens.dropFirst().dropLast())),depth:depth+1)}
+        for op in ["|","&"] {
+            var i=0
+            while i+1<tokens.count {
+                if ["(","[","{"].contains(tokens[i].text){i=SwiftSourceSyntax.end(tokens,i)}
+                else if tokens[i].text==op,tokens[i+1].text==op {
+                    let a=boolean(SwiftSourceSyntax.text(Array(tokens.prefix(i))),depth:depth+1),b=boolean(SwiftSourceSyntax.text(Array(tokens.dropFirst(i+2))),depth:depth+1)
+                    if op=="|" {if a==true || b==true{return true};if a==false && b==false{return false}}
+                    else{if a==false || b==false{return false};if a==true && b==true{return true}}
+                    return nil
+                };i+=1
+            }
+        }
         if value=="true"{return true};if value=="false"{return false}
-        if value.hasPrefix("!"),let inner=boolean(String(value.dropFirst())){return !inner}
+        if value.hasPrefix("!"),let inner=boolean(String(value.dropFirst()),depth:depth+1){return !inner}
         for op in ["==","!="] {
-            let parts=value.components(separatedBy:op)
+            var split:Int?,i=0
+            while i+1<tokens.count {if ["(","[","{"].contains(tokens[i].text){i=SwiftSourceSyntax.end(tokens,i)}else if tokens[i].text==String(op.first!),tokens[i+1].text=="="{split=i;break};i+=1}
+            let parts=split.map{[SwiftSourceSyntax.text(Array(tokens.prefix($0))),SwiftSourceSyntax.text(Array(tokens.dropFirst($0+2)))]} ?? []
+            if parts.count==2,let a=enumValue(SwiftSourceSyntax.tokens(parts[0]),hint:enumValue(SwiftSourceSyntax.tokens(parts[1]))?.0),let b=enumValue(SwiftSourceSyntax.tokens(parts[1]),hint:a.0){return (a==b)==(op=="==")}
             if parts.count==2,parts.allSatisfy({["nil","true","false"].contains($0) || $0.hasPrefix(".") || $0.hasPrefix("\"") || Double($0) != nil}) {return (parts[0]==parts[1]) == (op=="==")}
         };return nil
     }
@@ -117,6 +135,9 @@ final class SwiftViewBuilder {
         if key.hasPrefix("Self."),let value=index.constants[context.owner+"."+key.dropFirst(5)]{return resolve(value,context,depth:depth+1)}
         if !key.contains("."),let value=index.constants[context.owner+"."+key],SwiftSourceSyntax.text(value) != key{return resolve(value,context,depth:depth+1)}
         if let value=sourceFunction(t,context:context,depth:depth),SwiftSourceSyntax.text(value) != key{return value}
+        if let value=scalarMember(t,context:context,depth:depth){return value}
+        if let value=enumMember(t,context:context,depth:depth){return value}
+        if t.first?.text=="!",let flag=boolean(SwiftSourceSyntax.text(resolve(Array(t.dropFirst()),context,depth:depth+1))){return SwiftSourceSyntax.tokens(flag ? "false":"true")}
         if t.count>=3,let value=context.values[t[0].text] {
             let list=resolve(value,context,depth:depth+1)
             if list.first?.text=="[",list.last?.text=="]" {
@@ -151,7 +172,8 @@ final class SwiftViewBuilder {
         }
         if t.first?.text=="[",SwiftSourceSyntax.end(t,0)==t.count-1 {
             var output=SwiftSourceSyntax.tokens("[")
-            for (i,item) in SwiftSourceSyntax.split(Array(t.dropFirst().dropLast())).enumerated(){if i>0{output+=SwiftSourceSyntax.tokens(",")};output+=resolve(item,context,depth:depth+1)}
+            let items=SwiftSourceSyntax.split(Array(t.dropFirst().dropLast())),hint=items.compactMap{enumValue($0)?.0}.first
+            for (i,item) in items.enumerated(){if i>0{output+=SwiftSourceSyntax.tokens(",")};let value=resolve(item,context,depth:depth+1);if let e=enumValue(value,hint:hint){output+=SwiftSourceSyntax.tokens(e.0+"."+e.1)}else{output+=value}}
             output+=SwiftSourceSyntax.tokens("]");return output
         }
         if let open=t.firstIndex(where:{$0.text=="("}),open>0,SwiftSourceSyntax.end(t,open)==t.count-1,t[0].text.first?.isUppercase==true || t[0].text=="." {
@@ -163,8 +185,18 @@ final class SwiftViewBuilder {
         for (i,token) in t.enumerated() {
             if !token.string,(i==0 || t[i-1].text != "."),(i+1==t.count || ![".",":"].contains(t[i+1].text)),let value=context.values[token.text],SwiftSourceSyntax.text(value) != token.text {
                 result += resolve(value,context,depth:depth+1)
+            }else if !token.string,(i==0 || t[i-1].text != "."),(i+1==t.count || ![".",":"].contains(t[i+1].text)),index.views[context.owner]?.computed[token.text] != nil {
+                result += resolve([token],context,depth:depth+1)
             }else{result.append(token)}
             if result.count>4096{return Array(result.prefix(4096))}
+        }
+        var optional=0
+        while optional+3<result.count {
+            if result[optional].text=="nil",result[optional+1].text=="?",result[optional+2].text==".",result[optional+3].text.first?.isLetter==true {
+                var end=optional+4
+                while end+1<result.count,result[end].text==".",result[end+1].text.first?.isLetter==true{end+=2}
+                if end==result.count || result[end].text != "(" {result.removeSubrange((optional+1)..<end)}
+            };optional+=1
         }
         let arrays=SwiftSourceSyntax.split(result,separator:"+")
         if arrays.count>1,arrays.allSatisfy({$0.first?.text=="[" && $0.last?.text=="]"}) {
@@ -175,7 +207,10 @@ final class SwiftViewBuilder {
         var q=0
         while q<result.count {
             if ["(","[","{"].contains(result[q].text){q=SwiftSourceSyntax.end(result,q)}
-            else if result[q].text=="?",q+1<result.count,result[q+1].text=="?",SwiftSourceSyntax.text(Array(result.prefix(q)))=="nil" {return resolve(Array(result.dropFirst(q+2)),context,depth:depth+1)}
+            else if result[q].text=="?",q+1<result.count,result[q+1].text=="?" {
+                let lhs=resolve(Array(result.prefix(q)),context,depth:depth+1),key=SwiftSourceSyntax.text(lhs)
+                if key=="nil" || (lhs.first?.text=="nil" && lhs.dropFirst().contains{$0.text=="?"}){return resolve(Array(result.dropFirst(q+2)),context,depth:depth+1)}
+            }
             else if result[q].text=="?",q+1<result.count,result[q+1].text != "?",result[q+1].text != ".",let condition=boolean(SwiftSourceSyntax.text(resolve(Array(result.prefix(q)),context,depth:depth+1))) {
                 var colon=q+1
                 while colon<result.count && result[colon].text != ":" {if ["(","[","{"].contains(result[colon].text){colon=SwiftSourceSyntax.end(result,colon)};colon+=1}
@@ -183,6 +218,7 @@ final class SwiftViewBuilder {
             }
             q+=1
         }
+        if let flag=boolean(SwiftSourceSyntax.text(result)){return SwiftSourceSyntax.tokens(flag ? "true":"false")}
         return result
     }
     func call(_ t:[SwiftToken],_ position:inout Int)->SwiftImportCall? {
@@ -340,7 +376,7 @@ final class SwiftViewBuilder {
             warn("自定义 Layout 采用换行流式布局近似：\(name)",ref)
             return SwiftImportElement("FlowLayout",args:args,children:body(),reference:ref)
         }
-        if ["VStack","HStack","ZStack","LazyVStack","LazyHStack","Group","NavigationStack","NavigationView","ScrollView","ScrollViewReader","List","Form","Section","GeometryReader","ViewThatFits"].contains(name) {
+        if ["VStack","HStack","ZStack","LazyVStack","LazyHStack","Group","NavigationStack","NavigationView","ScrollView","ScrollViewReader","List","Form","Section","GeometryReader","ViewThatFits","ToolbarItem","ToolbarItemGroup"].contains(name) {
             var children=body()
             if name=="GeometryReader"{warn("GeometryReader 按当前画布宽度估算",ref)}
             return SwiftImportElement(name,args:args,children:children,reference:ref)
@@ -358,6 +394,9 @@ final class SwiftViewBuilder {
             let label=call.closures["label"] ?? (call.args["$0"]==nil && ["Button","PhotosPicker"].contains(name) ? call.closures["$body"]:nil)
             if let label{return SwiftImportElement("Group",children:sequence(label,context:context),reference:ref)}
             // Action / destination closures never become visible layers.
+            var args=args
+            let action=SwiftSourceSyntax.text(call.closures["$body"] ?? call.args["action"] ?? [])
+            if ["dismiss()","self.dismiss()"].contains(action){args["_navigationBack"]=SwiftSourceSyntax.tokens("true")}
             return SwiftImportElement("Button",args:args,reference:ref)
         }
         if ["EmptyView","AnyView"].contains(name){return name=="EmptyView" ? nil:SwiftImportElement("Group",children:sequence(args["$0"] ?? [],context:context),reference:ref)}
@@ -378,7 +417,9 @@ final class SwiftViewBuilder {
     func modify(_ element:SwiftImportElement,_ modifier:SwiftImportCall,context:SwiftImportContext)->SwiftImportElement {
         let name=modifier.name,ref=reference(context,modifier.line)
         var args=modifier.args.mapValues{resolve($0,context)}
-        let supported:Set<String>=["padding","frame","offset","position","font","foregroundStyle","foregroundColor","tint","background","overlay","clipShape","cornerRadius","fill","stroke","strokeBorder","opacity","shadow","bold","fontWeight","multilineTextAlignment","buttonStyle","blur","lineSpacing","lineLimit","minimumScaleFactor","clipped","scaledToFit","scaledToFill","resizable","aspectRatio","fixedSize","layoutPriority"]
+        if name=="toolbar",let content=modifier.closures["$body"] {return SwiftImportElement(".toolbar",args:args,children:[element]+sequence(content,context:context),reference:ref)}
+        if name=="toolbar",SwiftSourceSyntax.text(args["for"] ?? []).contains("navigationBar") {return SwiftImportElement(".navigationBarVisibility",args:args,children:[element],reference:ref)}
+        let supported:Set<String>=["padding","frame","offset","position","font","foregroundStyle","foregroundColor","tint","background","overlay","clipShape","cornerRadius","fill","stroke","strokeBorder","opacity","shadow","bold","fontWeight","multilineTextAlignment","buttonStyle","blur","lineSpacing","lineLimit","minimumScaleFactor","tag","navigationTitle","toolbarBackground","listRowBackground","disabled","clipped","scaledToFit","scaledToFill","resizable","aspectRatio","fixedSize","layoutPriority"]
         if supported.contains(name) {
             var children=[element]
             if ["background","overlay"].contains(name),let tokens=modifier.closures["$body"] {

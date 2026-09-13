@@ -75,7 +75,23 @@ void main(){{
   await tester.pumpWidget(host(element({literal(by_kind['image'])}),200,100));
   expect(tester.widget<Image>(find.byType(Image)).fit,BoxFit.contain);expect(tester.takeException(),isNull);
  }});
+ testWidgets('form row preserves selected choice',(tester)async{{
+  final spec=<String,dynamic>{literal(by_kind['selectField'])};
+  final titles=(spec['items'] as List).map((e)=>e['title'] as String).toList();
+  await tester.pumpWidget(host(element({{...spec,'controlStyle':'formRow','selectedIndex':1}}),320,48));
+  expect(find.text(titles[1]),findsOneWidget);
+  await tester.tap(find.byType(PopupMenuButton<int>));await tester.pumpAndSettle();
+  await tester.tap(find.text(titles[0]).last);await tester.pumpAndSettle();
+  expect(find.text(titles[0]),findsOneWidget);expect(tester.takeException(),isNull);
+ }});
+ testWidgets('disabled action cannot navigate and enabled cancel goes back',(tester)async{{
+  final spec=<String,dynamic>{literal(by_kind['textButton'])};var calls=0;var target='';
+  Widget button(bool enabled)=>DesignElement(spec:{{...spec,'isEnabled':enabled,'navigationAction':'back'}},activePage:'test',navigate:(value){{calls++;target=value;}},openSidebar:(){{}});
+  await tester.pumpWidget(host(button(false),320,48));
+  await tester.tap(find.text(spec['text']),warnIfMissed:false);await tester.pump();expect(calls,0);
+  await tester.pumpWidget(host(button(true),320,48));await tester.tap(find.text(spec['text']));await tester.pump();expect(calls,1);expect(target,'__back');
+ }});
 }}
 """
 (root/'test/rich_features_test.dart').write_text(test)
-print('Prepared 8 additional checks for interactions, retained masks, text fitting, materials and image modes.')
+print('Prepared 10 additional checks for interactions, retained masks, text fitting, materials and image modes.')

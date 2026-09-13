@@ -69,8 +69,32 @@ extension SwiftExporter {
     }
     struct DesignerPicker: View {
         let title: String; let titles: [String]
+        var initialSelection = 0
         @State private var selected = 0
-        var body: some View { Picker(title, selection: $selected) { ForEach(titles.indices, id: \.self) { Text(titles[$0]).tag($0) } } }
+        var body: some View { Picker(title, selection: $selected) { ForEach(titles.indices, id: \.self) { Text(titles[$0]).tag($0) } }.onAppear { selected = min(max(0,initialSelection),max(0,titles.count-1)) } }
+    }
+    struct DesignerFormField: View {
+        let kind:String; let title:String; let titles:[String]; let initialSelection:Int; let initialDate:String
+        @State private var text=""
+        @State private var selected=0
+        @State private var date=Date()
+        var body:some View {
+            content.onAppear {
+                selected=min(max(0,initialSelection),max(0,titles.count-1))
+                let f=DateFormatter();f.dateFormat="yyyy-MM-dd";date=f.date(from:initialDate) ?? Date(timeIntervalSince1970:0)
+            }
+        }
+        @ViewBuilder var content:some View {
+            if kind=="selectField" {
+                HStack {Text(title);Spacer(minLength:12);Menu {
+                    ForEach(titles.indices,id:\.self){i in Button(titles[i]){selected=i}}
+                } label:{HStack(spacing:4){Text(titles.indices.contains(selected) ? titles[selected]:"");Image(systemName:"chevron.up.chevron.down").font(.system(size:10))}.foregroundStyle(.secondary)}}
+            }else if kind=="dateField" {
+                HStack{Text(title);Spacer(minLength:12);DatePicker("",selection:$date,displayedComponents:.date).datePickerStyle(.compact).labelsHidden().fixedSize()}
+            }else if kind=="textArea" {
+                TextField(title,text:$text,axis:.vertical).lineLimit(2...4).textFieldStyle(.plain).frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.topLeading)
+            }else{TextField(title,text:$text).textFieldStyle(.plain)}
+        }
     }
     struct DesignerDate: View {
         let title: String; let initial: String

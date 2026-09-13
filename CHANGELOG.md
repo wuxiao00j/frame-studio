@@ -1,5 +1,19 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.8 — 2026-09-13
+
+本次补齐 SwiftUI 表单导入：识别无关联值枚举的 allCases、rawValue 与静态标签，读取 State(initialValue:) 默认状态，解析常见布尔组合和空值回退。修正选项显示变量名、选中状态丢失、错误展示条件提示的问题。
+
+Form / Section 保留常见分组卡片、标题、内边距和行分隔线；顶部导航标题与左右工具栏按钮转换成可编辑图层。多行输入按 axis 转换，新增“手机表单行”样式、默认选项与“启用交互”属性；日期值可使用 Agent 提供的运行对照值。简单 dismiss() 转换为原型返回，保存等业务处理不会执行或自动实现。
+
+新增属性同步至 Mac 预览、SwiftUI、Compose、Flutter 源码和 MCP。复杂自定义表单、未提供的日期或运行状态、平台字体与系统玻璃效果仍需对照调整。
+
+This update improves SwiftUI form import: it expands allCases, raw values and static labels from enums without associated values, reads State(initialValue:) defaults, and resolves common Boolean combinations and nil fallbacks. This fixes variable names shown as options, lost initial selection and incorrectly included conditional hints.
+
+Common Form / Section groups retain cards, headings, insets and row separators. Navigation titles and leading/trailing toolbar buttons become editable layers. Vertical text fields become multiline inputs. Added mobile form-row styling, initial selection and enabled-state properties; date values can come from agent-supplied runtime references. A simple dismiss() becomes prototype back navigation; save handlers and other business logic are neither executed nor implemented.
+
+Added properties work in Mac previews, SwiftUI, Compose and Flutter source exports, and MCP. Complex custom forms, unspecified dates or runtime states, platform font metrics and system glass effects still require visual comparison.
+
 ## 1.2.0-beta.7 — 2026-09-13
 
 图层列表支持单独选择组合成员、Shift 多选，并显示文字摘要；不必先解除整个组合。

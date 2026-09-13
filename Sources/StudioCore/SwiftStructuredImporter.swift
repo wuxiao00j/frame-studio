@@ -68,7 +68,7 @@ enum SwiftStructuredImporter {
             for variant in Variant.allCases {
                 var box=layout.layout(tree,width:device.size(variant).width,height:device.size(variant).height-topInset)
                 box.move(0,topInset)
-                for i in box.nodes.indices where box.nodes[i].isFixed {
+                for i in box.nodes.indices where box.nodes[i].isFixed && box.nodes[i].backgroundLayer==true {
                     var r=layout.rect(box.nodes[i]);r.y-=topInset
                     if r.width>=device.size(variant).width-1 && r.height>=device.size(variant).height-topInset-1{r.height+=topInset}
                     box.nodes[i].frames[Variant.standardPortrait.rawValue]=r

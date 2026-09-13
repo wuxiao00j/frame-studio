@@ -121,6 +121,7 @@ struct SwiftViewIndex {
     var constants:[String:[SwiftToken]]=[:]
     var functions:[String:SwiftViewMember]=[:]
     var valueDefaults:[String:[String:[SwiftToken]]]=[:]
+    var enums:[String:SwiftEnumDefinition]=[:]
     var files:[String]=[]
     init(files:[URL]) {
         var units:[(String,[SwiftToken])]=[]
@@ -144,6 +145,7 @@ struct SwiftViewIndex {
                 else if !isExtension && !extensions {
                     var view=SwiftViewDefinition(name:name,file:file,line:t[i].line)
                     readMembers(body,into:&view)
+                    if t[i].text=="enum"{readEnum(body,definition:view,iterable:header.contains{$0.text=="CaseIterable"})}
                     valueDefaults[name]=view.defaults
                     if header.contains(where:{$0.text=="View"}),view.members["body"] != nil {views[name]=view}
                     if header.contains(where:{$0.text=="ViewModifier"}),view.members["body"] != nil {modifiers[name]=view}
@@ -230,6 +232,14 @@ struct SwiftViewIndex {
                     if keyword != "init" && view.members[name]==nil {view.computed[name]=SwiftViewMember(body:Array(t[(j+1)..<end]),parameters:params,defaults:defaults,tupleFields:tuples)}
                     if keyword=="init" {
                         view.defaults.merge(defaults){old,_ in old}
+                        let body=Array(t[(j+1)..<end]);var at=0
+                        while at+3<body.count {
+                            if body[at].text.hasPrefix("_"),body[at+1].text=="=",body[at+2].text=="State",body[at+3].text=="(" {
+                                let close=SwiftSourceSyntax.end(body,at+3)
+                                if let value=SwiftSourceSyntax.arguments(Array(body[(at+4)..<close]))["initialValue"]{view.defaults[String(body[at].text.dropFirst())]=value}
+                                at=close+1
+                            }else{if ["{","(","["].contains(body[at].text){at=SwiftSourceSyntax.end(body,at)};at+=1}
+                        }
                         for p in params where (SwiftSourceSyntax.text(Array(t[i..<j])).contains(p+":()->") || SwiftSourceSyntax.text(Array(t[i..<j])).contains(p+":(")) && !view.slots.contains(p) {view.slots.append(p)}
                     }
                     i=end+1;continue

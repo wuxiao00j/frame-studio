@@ -40,6 +40,9 @@ let studioLine=Color(hex:"EAE7F0")
             .blur(radius:node.blurRadius ?? 0)
             .modifier(ImportedMaskModifier(masks:node.masks(in:variant)))
             .opacity(node.opacity)
+            .disabled(node.isEnabled==false)
+            .allowsHitTesting(!interactive || node.isEnabled != false)
+            .opacity(node.isEnabled==false ? 0.45:1)
             .rotationEffect(.degrees(node.rotation))
             .onTapGesture{if interactive && !node.targetPageID.isEmpty && [.text,.icon,.image,.avatar,.rectangle,.circle,.spacer,.qrCode,.chevron,.profileRow,.card,.statistic,.alertBanner].contains(node.kind){navigate(node.targetPageID)}}
             .onAppear{toggle=node.isOn;value=node.value}
@@ -47,21 +50,25 @@ let studioLine=Color(hex:"EAE7F0")
             .onChange(of:node.value){_,v in value=v}
     }
     @ViewBuilder var content:some View {
+        if node.controlStyle=="formRow",[.textField,.textArea,.dateField,.selectField].contains(node.kind){FormControlPreview(node:node,interactive:interactive)}
+        else{standardContent}
+    }
+    @ViewBuilder var standardContent:some View {
         switch node.kind {
         case .text: Text(node.text).lineLimit(node.lineLimit).lineSpacing(node.lineSpacing ?? 0).minimumScaleFactor(node.minimumScaleFactor ?? 1).multilineTextAlignment(node.textAlignment=="center" ? .center : node.textAlignment=="trailing" ? .trailing : .leading).frame(maxWidth:.infinity,alignment:alignment)
         case .icon: icon.frame(maxWidth:.infinity)
         case .iconButton: Button(action:openSidebar){icon.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
-        case .button: Button{navigate(node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize)};if node.hasLabel{Text(node.text)}}.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
+        case .button: Button{navigate(node.navigationAction=="back" ? "__back":node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize)};if node.hasLabel{Text(node.text)}}.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
         case .image: media
         case .avatar: avatar
         case .profileRow: HStack(spacing:node.spacing){avatar.frame(width:node.avatarSize,height:node.avatarSize);VStack(alignment:.leading,spacing:8){Text(node.text).fontWeight(.semibold);Text(node.subtitle).font(.system(size:max(10,node.fontSize-3))).opacity(0.55)};Spacer(minLength:0);if node.hasQRCode{UploadedIcon(data:node.qrIconData,symbol:"qrcode",size:20).opacity(0.4)};if node.hasChevron{UploadedIcon(data:node.chevronIconData,symbol:"chevron.right",size:12).opacity(0.3)}}.padding(node.padding)
-        case .navigationBar: HStack{Button{node.navigationAction=="back" ? navigate("__back"):openSidebar()}label:{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize)}.buttonStyle(.plain);Spacer();Text(node.text).fontWeight(.semibold);Spacer();Button{navigate(node.targetPageID)}label:{UploadedIcon(data:node.trailingIconData,symbol:node.trailingSymbol ?? "square.and.pencil",size:node.iconSize)}.buttonStyle(.plain)}.padding(.horizontal,node.padding)
+        case .navigationBar: HStack{Button{node.navigationAction=="back" ? navigate("__back"):openSidebar()}label:{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize)}.buttonStyle(.plain);Spacer();Text(node.text).fontWeight(.semibold);Spacer();Button{navigate(node.navigationAction=="back" ? "__back":node.targetPageID)}label:{UploadedIcon(data:node.trailingIconData,symbol:node.trailingSymbol ?? "square.and.pencil",size:node.iconSize)}.buttonStyle(.plain)}.padding(.horizontal,node.padding)
         case .tabBar: HStack(spacing:0){ForEach(node.items){item in Button{navigate(item.pageID)}label:{VStack(spacing:6){UploadedIcon(data:item.pageID==activePage ? item.activeIconData:item.iconData,symbol:item.pageID==activePage ? item.activeSymbol:item.symbol,size:node.iconSize);Text(item.title).font(.system(size:node.fontSize))}.foregroundStyle(item.pageID==activePage ? Color(hex:node.accent) : Color(hex:node.foreground).opacity(0.5)).frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)}}.padding(.horizontal,6)
         case .sidebar: VStack(alignment:.leading,spacing:node.spacing){Text(node.text).fontWeight(.semibold).padding(.bottom,12);ForEach(node.items){item in Button{navigate(item.pageID)}label:{HStack(spacing:12){UploadedIcon(data:item.pageID==activePage ? item.activeIconData:item.iconData,symbol:item.pageID==activePage ? item.activeSymbol:item.symbol,size:node.iconSize);Text(item.title);Spacer()}.padding(12).background(item.pageID==activePage ? Color(hex:node.accent).opacity(0.1) : .clear).clipShape(RoundedRectangle(cornerRadius:10))}.buttonStyle(.plain)};Spacer(minLength:0)}.padding(node.padding)
-        case .listRow: Button{navigate(node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize).foregroundStyle(Color(hex:node.accent))};VStack(alignment:.leading,spacing:5){Text(node.text);if !node.subtitle.isEmpty{Text(node.subtitle).font(.system(size:max(10,node.fontSize-4))).opacity(0.45)}};Spacer(minLength:0);if node.hasChevron{UploadedIcon(data:node.chevronIconData,symbol:"chevron.right",size:11).opacity(0.3)}}.padding(node.padding)}.buttonStyle(.plain)
+        case .listRow: Button{navigate(node.navigationAction=="back" ? "__back":node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize).foregroundStyle(Color(hex:node.accent))};VStack(alignment:.leading,spacing:5){Text(node.text);if !node.subtitle.isEmpty{Text(node.subtitle).font(.system(size:max(10,node.fontSize-4))).opacity(0.45)}};Spacer(minLength:0);if node.hasChevron{UploadedIcon(data:node.chevronIconData,symbol:"chevron.right",size:11).opacity(0.3)}}.padding(node.padding)}.buttonStyle(.plain)
         case .card: VStack(alignment:.leading,spacing:node.spacing){if node.hasIcon{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize+6).foregroundStyle(Color(hex:node.accent))};Spacer(minLength:0);Text(node.text).fontWeight(.semibold);Text(node.subtitle).font(.system(size:max(11,node.fontSize-5))).opacity(0.5)}.frame(maxWidth:.infinity,alignment:.leading).padding(node.padding+4)
         case .divider: Rectangle().fill(node.paintStyle)
-        case .toggle: DetailedSwitch(node:node,isOn:interactive ? $toggle:.constant(node.isOn))
+        case .toggle: DetailedSwitch(node:node,interactive:interactive,isOn:interactive ? $toggle:.constant(node.isOn))
         case .textField,.searchField: HStack(spacing:10){if node.kind == .searchField{UploadedIcon(data:node.iconData,symbol:node.symbol,size:node.iconSize).opacity(0.5)};TextField(node.text,text:interactive ? $text : .constant("")).textFieldStyle(.plain)}.padding(.horizontal,node.padding)
         case .badge: Text(node.text).frame(maxWidth:.infinity,maxHeight:.infinity)
         case .progress: DetailedProgress(node:node)

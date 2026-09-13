@@ -75,7 +75,7 @@ class _DesignElementState extends State<DesignElement> {
  Color get accent=>designColor(s('accent')); Color get foreground=>designColor(s('foreground'));
  bool on=false;double value=0;double number=1;int selected=0;DateTime date=DateTime(2026);
  List<Map<String,dynamic>> get items=>(n['items'] as List? ?? []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
- @override void initState(){super.initState();on=n['isOn']==true;value=d('value');number=d('numberValue',1);date=DateTime.tryParse(s('dateValue'))??DateTime(2026);}
+ @override void initState(){super.initState();on=n['isOn']==true;selected=d('selectedIndex').toInt().clamp(0,math.max(0,items.length-1));value=d('value');number=d('numberValue',1);date=DateTime.tryParse(s('dateValue'))??DateTime(2026);}
  TextAlign get align=>s('textAlignment')=='center' ? TextAlign.center:s('textAlignment')=='trailing' ? TextAlign.right:TextAlign.left;
  Widget text(String content,{double? size,Color? color,FontWeight? weight,int? maxLines})=>Text(content,textAlign:align,maxLines:maxLines,overflow:maxLines==null ? null:TextOverflow.ellipsis,style:TextStyle(fontSize:size??d('fontSize',16),color:color??foreground,fontWeight:weight??switch(s('fontWeight')){'bold'=>FontWeight.bold,'semibold'=>FontWeight.w600,'medium'=>FontWeight.w500,_=>FontWeight.normal}));
  Widget icon({double? size,Color? color,String? key,String? asset}) {
@@ -87,7 +87,7 @@ class _DesignElementState extends State<DesignElement> {
  Widget glyph()=>s('iconAsset').isNotEmpty ? icon(color:foreground):s('asset').isEmpty ? icon(color:foreground):SizedBox(width:d('iconSize'),height:d('iconSize'),child:media(fit:BoxFit.contain));
  Widget avatar()=>ClipRRect(borderRadius:BorderRadius.circular(d('avatarSize')/3),child:SizedBox(width:d('avatarSize'),height:d('avatarSize'),child:ColoredBox(color:accent.withValues(alpha:0.12),child:media())));
  Widget hit(Widget child,VoidCallback action)=>GestureDetector(behavior:HitTestBehavior.opaque,onTap:action,child:child);
- void go()=>widget.navigate(s('targetPageID'));
+ void go()=>widget.navigate(s('navigationAction')=='back' ? '__back':s('targetPageID'));
  @override Widget build(BuildContext context) {
   final f=Map<String,dynamic>.from(n['_corners'] as Map? ?? {});final radius=BorderRadius.only(topLeft:Radius.circular(numProp(f,'tl',d('cornerRadius'))),topRight:Radius.circular(numProp(f,'tr',d('cornerRadius'))),bottomLeft:Radius.circular(numProp(f,'bl',d('cornerRadius'))),bottomRight:Radius.circular(numProp(f,'br',d('cornerRadius'))));
   return LayoutBuilder(builder:(context,bounds) {
@@ -95,11 +95,17 @@ class _DesignElementState extends State<DesignElement> {
    if(d('blurRadius')>0)result=ImageFiltered(imageFilter:ui.ImageFilter.blur(sigmaX:d('blurRadius'),sigmaY:d('blurRadius')),child:result);
    final masks=n['_masks'] as List? ?? const [];
    if(masks.isNotEmpty)result=ClipPath(clipper:DesignImportedClipper(masks),child:result);
-   return Transform.rotate(angle:d('rotation')*math.pi/180,child:Opacity(opacity:d('opacity',1),child:result));
+   return Transform.rotate(angle:d('rotation')*math.pi/180,child:Opacity(opacity:d('opacity',1)*(n['isEnabled']==false ? 0.45:1),child:ExcludeFocus(excluding:n['isEnabled']==false,child:AbsorbPointer(absorbing:n['isEnabled']==false,child:result))));
   });
+ }
+ Widget formControl(BuildContext context) {
+  if(s('kind')=='selectField')return Row(children:[text(s('text')),const Spacer(),PopupMenuButton<int>(enabled:n['isEnabled']!=false,initialValue:selected,onSelected:(v)=>setState(()=>selected=v),itemBuilder:(_)=>[for(var i=0;i<items.length;i++) PopupMenuItem(value:i,child:Text(items[i]['title']))],child:Row(mainAxisSize:MainAxisSize.min,children:[text(items.isEmpty ? '' : items[selected.clamp(0,items.length-1)]['title'],color:foreground.withValues(alpha:0.55)),const Icon(Icons.unfold_more,size:14)]))]);
+  if(s('kind')=='dateField')return Row(children:[text(s('text')),const Spacer(),hit(Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:Colors.black.withValues(alpha:0.05),borderRadius:BorderRadius.circular(24)),child:text('${date.year}年${date.month}月${date.day}日')),()async{final value=await showDatePicker(context:context,initialDate:date,firstDate:DateTime(1900),lastDate:DateTime(2200));if(value!=null && mounted)setState(()=>date=value);})]);
+  return Align(alignment:s('kind')=='textArea' ? Alignment.topLeft:Alignment.centerLeft,child:TextField(enabled:n['isEnabled']!=false,minLines:s('kind')=='textArea' ? 2:1,maxLines:s('kind')=='textArea' ? 4:1,style:TextStyle(fontSize:d('fontSize',16),color:foreground),decoration:InputDecoration(hintText:s('text'),border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.zero)));
  }
  Widget content(BuildContext context) {
   final pad=d('padding',16),gap=d('spacing',12);
+  if(s('controlStyle')=='formRow' && ['textField','textArea','selectField','dateField'].contains(s('kind')))return formControl(context);
   switch(s('kind')) {
    case 'text':return Align(alignment:align==TextAlign.center ? Alignment.center:align==TextAlign.right ? Alignment.centerRight:Alignment.centerLeft,child:DesignImportedText(value:s('text'),align:align,style:TextStyle(fontSize:d('fontSize',16),color:foreground,fontWeight:s('fontWeight')=='bold' ? FontWeight.bold:s('fontWeight')=='semibold' ? FontWeight.w600:s('fontWeight')=='medium' ? FontWeight.w500:FontWeight.normal),limit:n['lineLimit'] as int?,spacing:d('lineSpacing'),minimumScale:d('minimumScaleFactor',1)));
    case 'icon':return Center(child:glyph());

@@ -36,6 +36,7 @@ import StudioCore
 }
 @MainActor struct DetailedSwitch:View {
     let node:DesignNode
+    var interactive=false
     @Binding var isOn:Bool
     var body:some View {
         HStack(spacing:node.spacing) {
@@ -46,7 +47,12 @@ import StudioCore
             if node.position != "leading" {control}
         }.padding(.horizontal,node.padding)
     }
-    var control:some View {Toggle("",isOn:$isOn).toggleStyle(.switch).labelsHidden().fixedSize().tint(Color(hex:node.accent))}
+    @ViewBuilder var control:some View {
+        if interactive {Toggle("",isOn:$isOn).toggleStyle(.switch).labelsHidden().fixedSize().tint(Color(hex:node.accent))}
+        else {Capsule().fill(isOn ? Color(hex:node.accent):Color(hex:"E4E4E9"))
+            .overlay(alignment:isOn ? .trailing:.leading){Circle().fill(.white).frame(width:27,height:27).padding(2).shadow(color:.black.opacity(0.08),radius:1,y:1)}
+            .frame(width:51,height:31).accessibilityLabel(node.text).accessibilityValue(isOn ? "开启":"关闭")}
+    }
 }
 @MainActor struct ExtraComponentPreview:View {
     let node:DesignNode
@@ -58,13 +64,15 @@ import StudioCore
     @State private var selection=""
     @State private var date=Date()
     var body:some View {
-        content.onAppear{checked=node.isOn;number=node.number;selection=node.items.first?.id ?? "";date=Self.date(node.dateValue)}
+        content.onAppear{checked=node.isOn;number=node.number;selection=node.items.indices.contains(node.selectedIndex ?? 0) ? node.items[node.selectedIndex ?? 0].id:"";date=Self.date(node.dateValue)}
             .onChange(of:node.number){_,v in number=v}.onChange(of:node.isOn){_,v in checked=v}
+            .onChange(of:node.dateValue){_,v in date=Self.date(v)}
+            .onChange(of:node.selectedIndex){_,v in selection=node.items.indices.contains(v ?? 0) ? node.items[v ?? 0].id:""}
     }
     @ViewBuilder var content:some View {
         switch node.kind {
         case .backButton:Button{navigate("__back")}label:{HStack(spacing:node.spacing){glyph; if node.hasLabel {Text(node.text)}}.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
-        case .iconLabel,.textButton,.outlinedButton:Button{navigate(node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{glyph};if node.hasLabel{Text(node.text)}}.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
+        case .iconLabel,.textButton,.outlinedButton:Button{navigate(node.navigationAction=="back" ? "__back":node.targetPageID)}label:{HStack(spacing:node.spacing){if node.hasIcon{glyph};if node.hasLabel{Text(node.text)}}.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
         case .checkbox,.radio:
             HStack(spacing:node.spacing){if node.position=="leading"{choice};if node.hasIcon{glyph};if node.hasLabel{Text(node.text)};Spacer(minLength:0);if node.position != "leading"{choice}}.padding(.horizontal,node.padding)
         case .stepper:Stepper(value:interactive ? $number:.constant(node.number),in:node.minimum...node.maximum,step:node.step){Text("\(node.text)  \(DesignNode.displayNumber(interactive ? number:node.number))")}.padding(.horizontal,node.padding)
@@ -80,7 +88,7 @@ import StudioCore
         case .statistic:VStack(alignment:.leading,spacing:8){HStack{if node.hasIcon{glyph};Text(node.text).font(.system(size:13))};Text(node.subtitle).font(.system(size:node.fontSize,weight:.semibold))}.padding(node.padding).frame(maxWidth:.infinity,alignment:.leading)
         case .alertBanner:HStack(spacing:node.spacing){if node.hasIcon{glyph};VStack(alignment:.leading,spacing:4){Text(node.text).fontWeight(.medium);Text(node.subtitle).font(.system(size:max(10,node.fontSize-3))).opacity(0.6)}}.padding(.horizontal,node.padding)
         case .qrCode,.chevron:glyph.frame(maxWidth:.infinity,maxHeight:.infinity).onTapGesture{if interactive{navigate(node.targetPageID)}}
-        case .switchControl:DetailedSwitch(node:node,isOn:interactive ? $checked:.constant(node.isOn))
+        case .switchControl:DetailedSwitch(node:node,interactive:interactive,isOn:interactive ? $checked:.constant(node.isOn))
         case .ringProgress:DetailedProgress(node:node)
         default:EmptyView()
         }

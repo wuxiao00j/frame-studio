@@ -153,3 +153,10 @@ Render a native static preview with `FrameStudio --render-preview --project FILE
 `update_component.properties` accepts `lineLimit` (1–1000, null for unlimited), `lineSpacing` (0–500 pt), `minimumScaleFactor` (0.1–1), `imageFit` (fill / fit / stretch), and `material` (ultraThin / thin / regular / thick / ultraThick; null disables it). Optional fields preserve legacy documents and can be cleared with null. See the user guide and export report for the Android material fallback.
 
 `clipMasks` maps variant names to arrays of at most 32 masks. Each contains `shape` (rectangle / roundedRectangle / ellipse), `rect: {x,y,width,height}`, and `radius`. Rect coordinates use the node width/height as units; radius uses its shorter side. Coordinates may extend beyond 0–1 to retain ancestor boundaries. Masks intersect and follow node moves/resizes. Clear retained clipping with `clipMasks: null`. Existing expectedRevision checks and atomic writes apply to all added properties.
+
+
+## Beta.8
+
+`controlStyle` accepts `standard` or `formRow`; formRow applies to textField, textArea, dateField and selectField. `selectedIndex` is a zero-based initial option index, clamped to existing choices for display. `isEnabled: false` disables prototype interaction and shows a disabled state. All three fields support update_component and null resets, retaining expectedRevision and atomic-write checks.
+
+Enum choices and State(initialValue:) defaults participate in non-executing parsing. Verify runtime values such as dates against the real UI before supplying values overrides; do not guess unresolved business data. Buttons containing only dismiss() support prototype back navigation. Save handlers and other business closures are not executed.

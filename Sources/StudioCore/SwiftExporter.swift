@@ -136,6 +136,8 @@ public enum SwiftExporter {
                         .blur(radius: \(number(n.blurRadius ?? 0)))
                         \(n.clipMasks==nil ? "" : ".designClipped(elementMasks\(i)[variant])")
                         .opacity(\(number(n.opacity))).rotationEffect(.degrees(\(number(n.rotation))))
+                        .disabled(\(n.isEnabled==false)).opacity(\(n.isEnabled==false ? "0.45":"1"))
+                        .allowsHitTesting(\(n.isEnabled != false))
                 }
                 \(n.clipMasks==nil ? "" : "private var elementMasks\(i): [[DesignClipRegion]] { \(masksExpression(n)) }")
             """
@@ -169,6 +171,9 @@ public enum SwiftExporter {
         return "LinearGradient(gradient: Gradient(stops: [\(stops)]), startPoint: UnitPoint(x: \(number(g.startX)), y: \(number(g.startY))), endPoint: UnitPoint(x: \(number(g.endX)), y: \(number(g.endY))))"
     }
     static func expression(_ n:DesignNode,pageID:String)->String {
+        if n.controlStyle=="formRow",[.textField,.textArea,.dateField,.selectField].contains(n.kind) {
+            return "DesignerFormField(kind: \(literal(n.kind.rawValue)), title: \(literal(n.text)), titles: [\(n.items.map{literal($0.title)}.joined(separator:","))], initialSelection: \(n.selectedIndex ?? 0), initialDate: \(literal(n.dateValue ?? "2026-01-01")))"
+        }
         let t=literal(n.text),sub=literal(n.subtitle),symbol=literal(n.symbol),pad=number(n.padding),gap=number(n.spacing),icon=number(n.iconSize),accent="Color(designHex: \(literal(n.accent)))"
         let media = n.imageData.isEmpty ? "Image(systemName: \(symbol)).resizable().scaledToFit().padding(12).foregroundStyle(\(accent))" : "Image(\(literal(DesignExporter.assetName(n))), bundle: .designAssets).resizable()\(n.imageFit=="stretch" ? "" : n.imageFit=="fit" ? ".scaledToFit()" : ".scaledToFill()").clipped()"
         let glyph = n.imageData.isEmpty ? "Image(systemName: \(symbol)).font(.system(size: \(icon)))" : "Image(\(literal(DesignExporter.assetName(n))), bundle: .designAssets).resizable().scaledToFit().frame(width: \(icon), height: \(icon))"
@@ -183,11 +188,11 @@ public enum SwiftExporter {
         case .text:return "Text(\(t)).lineLimit(\(n.lineLimit.map(String.init) ?? "nil")).lineSpacing(\(number(n.lineSpacing ?? 0))).minimumScaleFactor(\(number(n.minimumScaleFactor ?? 1))).multilineTextAlignment(.\(["leading","center","trailing"].contains(n.textAlignment) ? n.textAlignment : "leading"))"
         case .icon:return "\(n.iconData != nil ? leadingIcon:glyph).frame(maxWidth: .infinity).onTapGesture { navigate(\(literal(n.targetPageID))) }"
         case .iconButton:return "Button(action: openSidebar) { \(n.iconData != nil ? leadingIcon:glyph).frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
-        case .button:return "Button { navigate(\(literal(n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+"; " : "")\(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
+        case .button:return "Button { navigate(\(literal(n.navigationAction=="back" ? "__back":n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+"; " : "")\(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
         case .image:return media
         case .avatar:return "\(media).clipShape(RoundedRectangle(cornerRadius: \(number(n.avatarSize/3)))).aspectRatio(1, contentMode: .fit)"
         case .profileRow:return "HStack(spacing: \(gap)) { \(avatar); VStack(alignment: .leading, spacing: 8) { Text(\(t)).fontWeight(.semibold); Text(\(sub)).font(.system(size: \(number(max(10,n.fontSize-3))))).opacity(0.55) }; Spacer(minLength: 0); \(n.hasQRCode ? qr+".opacity(0.4);" : "") \(n.hasChevron ? chevron+".opacity(0.3)" : "") }.padding(\(pad))"
-        case .navigationBar:return "HStack { Button { \(n.navigationAction=="back" ? "navigate(\"__back\")":"openSidebar()") } label: { \(leadingIcon) }.buttonStyle(.plain); Spacer(); Text(\(t)).fontWeight(.semibold); Spacer(); Button { navigate(\(literal(n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { \(trailing) }.buttonStyle(.plain) }.padding(.horizontal, \(pad))"
+        case .navigationBar:return "HStack { Button { \(n.navigationAction=="back" ? "navigate(\"__back\")":"openSidebar()") } label: { \(leadingIcon) }.buttonStyle(.plain); Spacer(); Text(\(t)).fontWeight(.semibold); Spacer(); Button { navigate(\(literal(n.navigationAction=="back" ? "__back":n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { \(trailing) }.buttonStyle(.plain) }.padding(.horizontal, \(pad))"
         case .tabBar,.sidebar:
             let buttons=n.items.map{item -> String in
                 let selected=item.pageID==pageID
@@ -198,7 +203,7 @@ public enum SwiftExporter {
                 return "Button { navigate(\(literal(item.pageID.isEmpty ? pageID:item.pageID))) } label: { \(label).foregroundStyle(\(color)) }.buttonStyle(.plain)"
             }.joined(separator:"; ")
             return n.kind == .tabBar ? "HStack(spacing: 0) { \(buttons) }.padding(.horizontal, 6)" : "VStack(alignment: .leading, spacing: \(gap)) { Text(\(t)); \(buttons); Spacer(minLength: 0) }.padding(\(pad))"
-        case .listRow:return "Button { navigate(\(literal(n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+".foregroundStyle(\(accent)); " : "")VStack(alignment: .leading, spacing: 5) { Text(\(t)); Text(\(sub)).font(.system(size: \(number(max(10,n.fontSize-4))))).opacity(0.45) }; Spacer(minLength: 0); \(n.hasChevron ? chevron+".opacity(0.3)":"EmptyView()") }.padding(\(pad)) }.buttonStyle(.plain)"
+        case .listRow:return "Button { navigate(\(literal(n.navigationAction=="back" ? "__back":n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+".foregroundStyle(\(accent)); " : "")VStack(alignment: .leading, spacing: 5) { Text(\(t)); Text(\(sub)).font(.system(size: \(number(max(10,n.fontSize-4))))).opacity(0.45) }; Spacer(minLength: 0); \(n.hasChevron ? chevron+".opacity(0.3)":"EmptyView()") }.padding(\(pad)) }.buttonStyle(.plain)"
         case .card:return "VStack(alignment: .leading, spacing: \(gap)) { \(glyphExpression(n.symbol,n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):nil,n.iconSize+6)).foregroundStyle(\(accent)); Spacer(minLength: 0); Text(\(t)).fontWeight(.semibold); Text(\(sub)).font(.system(size: \(number(max(11,n.fontSize-5))))).opacity(0.5) }.frame(maxWidth: .infinity, alignment: .leading).padding(\(number(n.padding+4)))"
         case .divider:return "Rectangle().fill(\(paintExpression(n)))"
         case .toggle,.switchControl:return "DesignerToggle(title: \(t), initial: \(n.isOn), leading: \(n.position=="leading"), showLabel: \(n.hasLabel), showIcon: \(n.hasIcon), symbol: \(symbol), asset: \(literal(n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):"")), iconSize: \(icon), gap: \(gap), accent: \(accent)).padding(.horizontal, \(pad))"
@@ -208,11 +213,11 @@ public enum SwiftExporter {
         case .slider:return "DesignSlider(initial: \(number(n.value)), accent: \(accent)).padding(.horizontal, 8)"
         case .segmented:return "DesignSegments(titles: [\(n.items.map{literal($0.title)}.joined(separator:", "))]).padding(3)"
         case .backButton:return "Button { navigate(\"__back\") } label: { HStack(spacing: \(gap)) { \(leadingIcon); \(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
-        case .iconLabel,.textButton,.outlinedButton:return "Button { navigate(\(literal(n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+";":"")\(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
+        case .iconLabel,.textButton,.outlinedButton:return "Button { navigate(\(literal(n.navigationAction=="back" ? "__back":n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+";":"")\(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
         case .checkbox,.radio:return "DesignerChoice(title: \(t), initial: \(n.isOn), radio: \(n.kind == .radio), leading: \(n.position=="leading"), showLabel: \(n.hasLabel), showIcon: \(n.hasIcon), symbol: \(symbol), asset: \(literal(n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):"")), iconSize: \(icon), gap: \(gap), accent: \(accent)).padding(.horizontal, \(pad))"
         case .stepper:return "DesignerStepper(title: \(t), initial: \(number(n.number)), minimum: \(number(n.minimum)), maximum: \(number(n.maximum)), step: \(number(n.step))).padding(.horizontal, \(pad))"
         case .secureField,.textArea:return "HStack(spacing: \(gap)) { \(n.kind == .secureField && n.hasIcon ? leadingIcon+";":"")DesignerTextEntry(placeholder: \(t), secure: \(n.kind == .secureField), multiline: \(n.kind == .textArea)) }.padding(\(pad))"
-        case .selectField:return "DesignerPicker(title: \(t), titles: [\(n.items.map{literal($0.title)}.joined(separator:", "))]).padding(.horizontal, \(pad))"
+        case .selectField:return "DesignerPicker(title: \(t), titles: [\(n.items.map{literal($0.title)}.joined(separator:", "))], initialSelection: \(n.selectedIndex ?? 0)).padding(.horizontal, \(pad))"
         case .dateField:return "DesignerDate(title: \(t), initial: \(literal(n.dateValue ?? "2026-01-01"))).padding(.horizontal, \(pad))"
         case .rating:return "DesignerRating(initial: \(number(n.number)), count: \(Int(n.maximum)), size: \(icon), gap: \(gap), accent: \(accent))"
         case .loading:return "ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)"

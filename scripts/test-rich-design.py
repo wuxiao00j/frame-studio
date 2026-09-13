@@ -42,7 +42,7 @@ report=tool('inspect_ui_project',{'path':str(source)})
 assert any(c['componentKind']=='toggle' for c in report['classifications'])
 assert any(c['typeName']=='AwesomeNebulaPanel' for c in report['unmatched'])
 text_node=add('text')
-rendering={'lineLimit':2,'lineSpacing':5,'minimumScaleFactor':0.7,'imageFit':'fit','material':'thin','clipMasks':{'standardPortrait':[{'shape':'ellipse','rect':{'x':0,'y':0,'width':1,'height':1},'radius':0}]}}
+rendering={'controlStyle':'formRow','selectedIndex':0,'isEnabled':False,'lineLimit':2,'lineSpacing':5,'minimumScaleFactor':0.7,'imageFit':'fit','material':'thin','clipMasks':{'standardPortrait':[{'shape':'ellipse','rect':{'x':0,'y':0,'width':1,'height':1},'radius':0}]}}
 design=tool('update_component',{'nodeID':text_node,'properties':rendering,'expectedRevision':design['revision']})
 actual=design['pages'][-1]['nodes'][-1]
 assert all(actual[k]==v for k,v in rendering.items())

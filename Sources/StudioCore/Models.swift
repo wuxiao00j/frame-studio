@@ -107,6 +107,9 @@ public struct DesignNode: Codable, Equatable, Identifiable, Sendable {
     public var lineSpacing:Double?
     public var minimumScaleFactor:Double?
     public var imageFit:String?
+    public var controlStyle:String?
+    public var selectedIndex:Int?
+    public var isEnabled:Bool?
     public var backgroundLayer:Bool?
     public var visibleVariants:[String]?
     public var blurRadius:Double?
