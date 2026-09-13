@@ -4,6 +4,23 @@ import StudioCore
 @testable import FrameStudio
 
 final class EditorSessionTests:XCTestCase {
+    func testSavedPersonalTemplateIsReusableInANewProject() async throws {
+        try await MainActor.run {
+            let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer{try? FileManager.default.removeItem(at:root)}
+            let library=root.appendingPathComponent("Library.framestudio")
+            let a=EditorSession(projectURL:root.appendingPathComponent("A.framestudio"),libraryURL:library)
+            a.selection=Set(a.page.nodes.prefix(2).map(\.id));a.saveTemplate();a.templateCategory="导航与页头";a.confirmTemplate()
+            XCTAssertNil(a.error)
+            let b=EditorSession(projectURL:root.appendingPathComponent("B.framestudio"),libraryURL:library)
+            let template=try XCTUnwrap(b.personalLibrary?.templates.first)
+            XCTAssertEqual(template.category,"导航与页头");XCTAssertEqual(template.nodes.count,2)
+            let count=b.page.nodes.count;b.insertTemplate(template)
+            XCTAssertEqual(b.page.nodes.count,count+2);XCTAssertNil(b.error)
+            b.undo();XCTAssertEqual(b.page.nodes.count,count)
+            XCTAssertEqual(try PersonalComponentLibrary.load(library).templates.count,1)
+        }
+    }
     func testLayerListSelectsMembersWithoutChangingTheirGroup() async throws {
         try await MainActor.run {try withSession {session in
             let ids=session.page.nodes.prefix(2).map(\.id)

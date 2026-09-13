@@ -49,6 +49,13 @@ public enum ProjectStore {
             try validateColor(page.background)
             if let heights=page.contentHeights {guard heights.allSatisfy({Variant(rawValue:$0.key) != nil && $0.value.isFinite && (200...40000).contains($0.value)}) else{throw StudioError.invalid("页面内容高度必须在 200–40000 范围")}}
         }
+        guard p.templates.count<=1000,Set(p.templates.map(\.id)).count==p.templates.count else{throw StudioError.invalid("组件模板数量或 ID 无效")}
+        for t in p.templates {
+            guard t.id.range(of:"^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$",options:.regularExpression) != nil,!t.name.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty,t.name.count<=200,(t.category?.count ?? 0)<=64,!t.nodes.isEmpty,t.nodes.count<=2000 else{throw StudioError.invalid("组件模板名称、分类或图层数量无效")}
+            var sample=DesignProject();sample.device=p.device
+            let nodes=t.nodes.map{n in var n=n;n.targetPageID="";n.items=n.items.map{item in var item=item;item.pageID="";return item};return n}
+            sample.pages=[DesignPage(name:"模板检查",nodes:nodes)];try validate(sample)
+        }
     }
     static func validateColor(_ color: String) throws {
         let c=color.replacingOccurrences(of:"#",with:"")
@@ -76,6 +83,15 @@ public enum ProjectStore {
             try mutation(&p); try validate(p); SharedTabBar.reconcile(&p,before:before); try validate(p); p.revision += 1
             let enc=JSONEncoder(); enc.outputFormatting=[.prettyPrinted,.sortedKeys,.withoutEscapingSlashes]
             try enc.encode(p).write(to:url,options:.atomic); return p
+        }
+    }
+    static func updateLibrary(_ url:URL,expectedRevision:Int,edit:(inout [ComponentTemplate])->Void)throws->DesignProject {
+        try withLock(url) {
+            var p=try PersonalComponentLibrary.load(url)
+            guard p.revision==expectedRevision else{throw StudioError.conflict}
+            edit(&p.templates);try validate(p);p.revision+=1
+            let encoder=JSONEncoder();encoder.outputFormatting=[.prettyPrinted,.sortedKeys,.withoutEscapingSlashes]
+            try encoder.encode(p).write(to:url,options:.atomic);return p
         }
     }
     private static func withLock<T>(_ url: URL, _ body: () throws -> T) throws -> T {

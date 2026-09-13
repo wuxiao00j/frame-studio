@@ -83,3 +83,14 @@ This update improves SwiftUI form import: it expands allCases, raw values and st
 Common Form / Section groups retain cards, headings, insets and row separators. Navigation titles and leading/trailing toolbar buttons become editable layers. Vertical text fields become multiline inputs. Added mobile form-row styling, initial selection and enabled-state properties; date values can come from agent-supplied runtime references. A simple dismiss() becomes prototype back navigation; save handlers and other business logic are neither executed nor implemented.
 
 Added properties work in Mac previews, SwiftUI, Compose and Flutter source exports, and MCP. Complex custom forms, unspecified dates or runtime states, platform font metrics and system glass effects still require visual comparison.
+
+
+## Beta.9 categories and cross-project reuse
+
+This update improves component reuse with seven generic bundled composites: mobile form text, date and choice rows, multiline notes, paired reminder options, grouped cards and modal navigation. They are available across projects and contain generic example content, not personal project data.
+
+The library groups bundled, personal and project templates by category and searches names and categories. When saving a composite, enter a category and optionally save it to the personal library for reuse in other projects. Existing project templates can be copied to the personal library or recategorized through their context menu. Saving the same template again updates its personal copy.
+
+The local personal library retains all six layouts, icons, gradients, masks and form attributes. Insertion creates independent layers and clears links to pages absent from the destination project. Library writes use revision checks and atomic saves. MCP retains 27 tools with added category and bundled-template metadata. Legacy templates without a category display a suggested category. Exports remain UI source only.
+
+`~/Library/Application Support/FrameStudio/PersonalComponents.framestudio`

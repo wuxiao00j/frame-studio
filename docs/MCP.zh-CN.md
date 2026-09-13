@@ -160,3 +160,10 @@ Beta.6 的检查/导入工具还支持 `canvas: {"width": 402, "height": 874}` �
 `controlStyle` 为 `standard` 或 `formRow`；formRow 用于 textField、textArea、dateField、selectField。`selectedIndex` 是从 0 开始的默认选项序号；显示时限制在现有选项范围内。`isEnabled: false` 禁止原型交互并显示禁用状态。三个属性均可通过 update_component 修改、用 null 清除，并保留 expectedRevision 和原子写入检查。
 
 枚举选项与 State(initialValue:) 默认值会自动参与静态解析。日期等运行值仍应从真实界面核对，再通过 values 提供；不要把未解析数据猜成业务事实。只包含 dismiss() 的按钮支持原型返回，保存等业务闭包不执行。
+
+
+## Beta.9
+
+`ComponentTemplate.category` 是可选分类字符串（最多 64 字符）。`create_component_template` 接受 category；`list_components` 返回 templateCategories、builtinTemplates 和 projectTemplateCategories 建议分类。`insert_component_template` 可直接使用 builtinTemplates 中的稳定模板 ID，项目内同 ID 模板优先。修改已有模板分类时，读取 get_project，更新 templates[].category，再以 expectedRevision 调用 replace_project。
+
+个人库是本机标准设计文件 `~/Library/Application Support/FrameStudio/PersonalComponents.framestudio`。Agent 可用单独的 MCP 进程连接此文件，读取最新 revision，将模板写入 templates，再用 replace_project 原子提交；复制到另一个设计时仍需读取该设计自己的最新 revision。保留各 variant 的显式 frames、上传资源及属性，避免混入无关页面。个人库不随 GitHub 发布或源码导出自动上传。桌面个人库可点击刷新按钮同步外部修改。

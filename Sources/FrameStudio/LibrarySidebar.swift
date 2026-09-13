@@ -19,10 +19,7 @@ import StudioCore
                         let list=kinds.filter{$0.category==category}
                         if !list.isEmpty{VStack(alignment:.leading,spacing:9){Text(category).font(.system(size:10,weight:.semibold)).foregroundStyle(studioMuted);LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:8){ForEach(list){kind in ComponentTile(session:session,kind:kind){session.add(kind)}}}}}
                     }
-                    VStack(alignment:.leading,spacing:10){HStack{Text("我的组合组件").font(.system(size:10,weight:.semibold)).foregroundStyle(studioMuted);Spacer();Text("\(session.project.templates.count)").font(.system(size:10)).foregroundStyle(studioMuted)}
-                        if session.project.templates.isEmpty{Text("多选模块 → 存为组合组件\n组合好的设计，可以重复使用。").font(.system(size:10)).lineSpacing(5).foregroundStyle(studioMuted).padding(12).frame(maxWidth:.infinity,alignment:.leading).background(Color(hex:"F8F7FA"),in:RoundedRectangle(cornerRadius:8))}
-                        ForEach(session.project.templates){template in Button{session.insertTemplate(template)}label:{Label(template.name,systemImage:"square.stack.3d.up").font(.system(size:11)).frame(maxWidth:.infinity,alignment:.leading).padding(10)}.buttonStyle(.plain).background(Color(hex:"F4F1FC"),in:RoundedRectangle(cornerRadius:8)).contextMenu{Button("删除模板",role:.destructive){session.change{$0.templates.removeAll{$0.id==template.id}}}}}
-                    }
+                    TemplateLibraryView(session:session)
                 }.padding(.horizontal,16).padding(.bottom,20)}
             }else{
                 ScrollView{VStack(spacing:3){ForEach(session.page.nodes.filter{$0.visibleVariants?.contains(session.variant.rawValue) ?? true}.reversed()){node in LayerRow(session:session,node:node)}}.padding(.horizontal,10)}

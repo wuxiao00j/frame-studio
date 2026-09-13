@@ -245,7 +245,8 @@ public struct ComponentTemplate: Codable, Equatable, Identifiable, Sendable {
     public var id=UUID().uuidString
     public var name: String
     public var nodes: [DesignNode]
-    public init(name: String, nodes: [DesignNode]) { self.name=name; self.nodes=nodes }
+    public var category:String?
+    public init(name: String, nodes: [DesignNode], category:String?=nil) { self.name=name; self.nodes=nodes; self.category=category }
 }
 public struct DesignProject: Codable, Equatable, Sendable {
     public var schemaVersion=1

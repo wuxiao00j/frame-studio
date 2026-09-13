@@ -25,6 +25,10 @@ import StudioCore
     var showMCP=false
     var showTemplateComposer=false
     var templateName=""
+    var templateCategory="其他组合"
+    var saveTemplatePersonally=true
+    var personalLibrary:DesignProject?
+    let personalLibraryURL:URL
     var pageHistory:[String]=[]
     var propertyGesture=false
     @ObservationIgnored var scrollOffsets:[Variant:CGFloat]=[:]
@@ -47,7 +51,7 @@ import StudioCore
     var page:DesignPage { project.pages.first{$0.id==pageID} ?? project.pages[0] }
     var selected:DesignNode? { page.nodes.first{selection.contains($0.id)} }
     var visibleVariants:[Variant] { project.wideMode ? (landscape ? [.outerLandscape,.innerLandscape] : [.outerPortrait,.innerPortrait]) : (landscape ? [.standardLandscape] : [.standardPortrait]) }
-    init(projectURL:URL?=nil) {
+    init(projectURL:URL?=nil,libraryURL:URL?=nil) {
         let args=CommandLine.arguments
         let arg=args.firstIndex(of:"--project").flatMap{$0+1<args.count ? args[$0+1] : nil}
         var fileURL=projectURL ?? arg.map{URL(fileURLWithPath:$0)} ?? ProjectStore.defaultURL
@@ -59,6 +63,8 @@ import StudioCore
         } catch { p = .demo(); initialError=error.localizedDescription; fileURL=ProjectStore.defaultURL.deletingLastPathComponent().appendingPathComponent("Recovered-\(UUID().uuidString.prefix(6)).framestudio") }
         url=fileURL; project=p; pageID=p.pages[0].id; revisionOnDisk=p.revision; error=initialError
         variant=p.wideMode ? .outerPortrait : .standardPortrait
+        personalLibraryURL=libraryURL ?? (projectURL.map{$0.deletingLastPathComponent().appendingPathComponent("PersonalComponents.framestudio")} ?? PersonalComponentLibrary.defaultURL)
+        personalLibrary=try? PersonalComponentLibrary.load(personalLibraryURL)
     }
     func change(_ body:(inout DesignProject)->Void) {
         let before=project
@@ -129,15 +135,34 @@ import StudioCore
     func reorder(front:Bool) {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};let picked=p.pages[i].nodes.filter{selection.contains($0.id)};p.pages[i].nodes.removeAll{selection.contains($0.id)};if front{p.pages[i].nodes += picked}else{p.pages[i].nodes.insert(contentsOf:picked,at:0)}}}
     func group() {guard selection.count>1 else{return};let id=UUID().uuidString;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=id}}}
     func ungroup() {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=""}};selection=[];status="已解除组合，可逐项编辑"}
-    func saveTemplate() {guard !selection.isEmpty else{return};templateName=selection.count==1 ? selected?.name ?? "我的组件" : "我的组合组件";showTemplateComposer=true}
+    func saveTemplate() {guard !selection.isEmpty else{return};templateName=selection.count==1 ? selected?.name ?? "我的组件" : "我的组合组件";templateCategory=TemplateCatalog.suggested(name:templateName,nodes:page.nodes.filter{selection.contains($0.id)});showTemplateComposer=true}
     func confirmTemplate() {
         let nodes=page.nodes.filter{selection.contains($0.id)};guard !nodes.isEmpty else{return}
         let name=templateName.trimmingCharacters(in:.whitespacesAndNewlines)
-        change{$0.templates.append(ComponentTemplate(name:name.isEmpty ? "我的组合组件":name,nodes:nodes))};showTemplateComposer=false;status="已保存组合组件"
+        let template=TemplateCatalog.portable(ComponentTemplate(name:name.isEmpty ? "我的组合组件":name,nodes:nodes,category:templateCategory),device:project.device)
+        change{$0.templates.append(template)}
+        guard project.templates.contains(where:{$0.id==template.id}) else{return}
+        showTemplateComposer=false
+        if saveTemplatePersonally{copyToPersonal(template)}else{status="已保存项目组件"}
     }
     func insertTemplate(_ template:ComponentTemplate) {
         let nodes=ComponentAssembly.instantiate(template,origin:Rect(24,120.0+Double(scrollOffsets[variant] ?? 0)),variant:variant,device:project.device,pages:Set(project.pages.map(\.id)))
         change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){p.pages[i].nodes += nodes}};selection=Set(nodes.map(\.id))
+    }
+    func reloadPersonalLibrary() {do{personalLibrary=try PersonalComponentLibrary.load(personalLibraryURL)}catch{self.error="个人组件库："+error.localizedDescription}}
+    func copyToPersonal(_ template:ComponentTemplate) {
+        do {
+            let saved=TemplateCatalog.portable(template,device:project.device)
+            personalLibrary=try PersonalComponentLibrary.update(personalLibraryURL,expectedRevision:personalLibrary?.revision ?? 0){templates in
+                if let i=templates.firstIndex(where:{$0.id==saved.id}){templates[i]=saved}else{templates.append(saved)}
+            };status="已保存到个人组件库，其他项目可复用"
+        }catch{self.error=error.localizedDescription;reloadPersonalLibrary()}
+    }
+    func setTemplateCategory(_ id:String,category:String,personal:Bool) {
+        if personal {
+            do {personalLibrary=try PersonalComponentLibrary.update(personalLibraryURL,expectedRevision:personalLibrary?.revision ?? 0){templates in if let i=templates.firstIndex(where:{$0.id==id}){templates[i].category=category}}}
+            catch{self.error=error.localizedDescription;reloadPersonalLibrary()}
+        }else{change{p in if let i=p.templates.firstIndex(where:{$0.id==id}){p.templates[i].category=category}}}
     }
     func decompose(_ id:String) {
         guard let node=page.nodes.first(where:{$0.id==id}),node.kind.decomposable else{return}

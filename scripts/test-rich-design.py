@@ -28,8 +28,8 @@ tab=add('tabBar')
 design=tool('update_component',{'nodeID':tab,'expectedRevision':design['revision'],'properties':{'items':[{'id':'home-item','title':'首页','symbol':'house','selectedSymbol':'house.fill','pageID':design['pages'][0]['id']}]}})
 design=tool('import_icon',{'nodeID':tab,'itemID':'home-item','path':icon,'selected':True,'expectedRevision':design['revision']})
 assert design['pages'][-1]['nodes'][-1]['items'][0]['selectedIconData']
-design=tool('create_component_template',{'pageID':page,'nodeIDs':[rows[0],toggle],'name':'通知组合','expectedRevision':design['revision']})
-template=design['templates'][-1];assert template['name']=='通知组合'
+design=tool('create_component_template',{'pageID':page,'nodeIDs':[rows[0],toggle],'name':'通知组合','category':'表单与选择','expectedRevision':design['revision']})
+template=design['templates'][-1];assert template['name']=='通知组合';assert template['category']=='表单与选择'
 design=tool('insert_component_template',{'pageID':page,'templateID':template['id'],'x':36,'y':1100,'variant':'standardPortrait','expectedRevision':design['revision']})
 assert min(n['frames']['standardPortrait']['y'] for n in design['pages'][-1]['nodes'][-2:])==1100
 profile=add('profileRow',{'showQRCode':False,'showChevron':False,'frames':{'standardPortrait':{'x':24,'y':1650,'width':345,'height':100}}})
@@ -51,6 +51,11 @@ invalid=rpc('tools/call',{'name':'update_component','arguments':{'nodeID':text_n
 assert invalid['isError'] and project.read_bytes()==before
 design=tool('update_component',{'nodeID':text_node,'properties':{k:None for k in rendering},'expectedRevision':design['revision']})
 assert all(k not in design['pages'][-1]['nodes'][-1] for k in rendering)
+catalog=tool('list_components');assert len(catalog['builtinTemplates'])==7
+before=len(design['pages'][-1]['nodes'])
+design=tool('insert_component_template',{'pageID':page,'templateID':'builtin_form_group','expectedRevision':design['revision']})
+assert len(design['pages'][-1]['nodes'])>before
+assert not any(t['id']=='builtin_form_group' for t in design['templates'])
 paths={}
 for fmt in ['swiftui','flutter','android']:
  paths[fmt]=tool('export_project',{'format':fmt,'directory':str(folder)})['directory']

@@ -1,5 +1,19 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.9 — 2026-09-13
+
+本次完善组件复用：新增 7 个通用内置组合，涵盖手机表单文本行、日期行、选择行、多行备注、提醒双选项、分组卡片和弹窗导航。它们使用通用示例内容，可在所有项目中插入，不包含个人项目数据。
+
+组件库按分类展示内置组合、个人组件和项目组件，支持搜索名称与分类。保存组合时可填写分类，并勾选保存到个人组件库；以后新建或打开其他项目即可复用。已有项目模板可右键保存到个人库或更改分类。相同模板再次保存到个人库会更新其副本。
+
+个人库保存在本机，保留六套布局、图标、渐变、裁剪和表单属性；插入时生成独立图层，并清理目标项目中不存在的页面链接。库写入有版本冲突检查与原子保存。MCP 保持 27 个工具，新增分类和内置模板元数据。旧模板没有分类字段时自动显示建议分类。导出仍只生成 UI 源码。
+
+This update improves component reuse with seven generic bundled composites: mobile form text, date and choice rows, multiline notes, paired reminder options, grouped cards and modal navigation. They are available across projects and contain generic example content, not personal project data.
+
+The library groups bundled, personal and project templates by category and searches names and categories. When saving a composite, enter a category and optionally save it to the personal library for reuse in other projects. Existing project templates can be copied to the personal library or recategorized through their context menu. Saving the same template again updates its personal copy.
+
+The local personal library retains all six layouts, icons, gradients, masks and form attributes. Insertion creates independent layers and clears links to pages absent from the destination project. Library writes use revision checks and atomic saves. MCP retains 27 tools with added category and bundled-template metadata. Legacy templates without a category display a suggested category. Exports remain UI source only.
+
 ## 1.2.0-beta.8 — 2026-09-13
 
 本次补齐 SwiftUI 表单导入：识别无关联值枚举的 allCases、rawValue 与静态标签，读取 State(initialValue:) 默认状态，解析常见布尔组合和空值回退。修正选项显示变量名、选中状态丢失、错误展示条件提示的问题。

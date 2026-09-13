@@ -1,18 +1,18 @@
-# 原境 · Frame Studio v1.2.0-beta.8
+# 原境 · Frame Studio v1.2.0-beta.9
 
 ## 中文 · Beta 测试版
 
 公开 Beta 更新（包含之前版本功能）：原生 SwiftUI Mac UI 设计器，支持 43 种组件、长页面、标准 / 阔屏布局、图标上传、Tab 双态图标、自定义组合，以及旧 UI 源码分类导入。
 
-本次补齐 SwiftUI 表单导入：识别无关联值枚举的 allCases、rawValue 与静态标签，读取 State(initialValue:) 默认状态，解析常见布尔组合和空值回退。修正选项显示变量名、选中状态丢失、错误展示条件提示的问题。
+本次完善组件复用：新增 7 个通用内置组合，涵盖手机表单文本行、日期行、选择行、多行备注、提醒双选项、分组卡片和弹窗导航。它们使用通用示例内容，可在所有项目中插入，不包含个人项目数据。
 
-Form / Section 保留常见分组卡片、标题、内边距和行分隔线；顶部导航标题与左右工具栏按钮转换成可编辑图层。多行输入按 axis 转换，新增“手机表单行”样式、默认选项与“启用交互”属性；日期值可使用 Agent 提供的运行对照值。简单 dismiss() 转换为原型返回，保存等业务处理不会执行或自动实现。
+组件库按分类展示内置组合、个人组件和项目组件，支持搜索名称与分类。保存组合时可填写分类，并勾选保存到个人组件库；以后新建或打开其他项目即可复用。已有项目模板可右键保存到个人库或更改分类。相同模板再次保存到个人库会更新其副本。
 
-新增属性同步至 Mac 预览、SwiftUI、Compose、Flutter 源码和 MCP。复杂自定义表单、未提供的日期或运行状态、平台字体与系统玻璃效果仍需对照调整。
+个人库保存在本机，保留六套布局、图标、渐变、裁剪和表单属性；插入时生成独立图层，并清理目标项目中不存在的页面链接。库写入有版本冲突检查与原子保存。MCP 保持 27 个工具，新增分类和内置模板元数据。旧模板没有分类字段时自动显示建议分类。导出仍只生成 UI 源码。
 
 **导出只包含 UI 源码、资源、项目配置和设计文件，不生成 APK、AAB、IPA 或可安装手机 App。** 原型导航、开关和表单不代表业务功能已完成，后续仍需开发真实业务逻辑。
 
-- 下载 `FrameStudio-v1.2.0-beta.8-macOS-arm64.zip`，解压并将应用放到“应用程序”。
+- 下载 `FrameStudio-v1.2.0-beta.9-macOS-arm64.zip`，解压并将应用放到“应用程序”。
 - 需要 Apple Silicon 与 macOS 14+；Beta 使用临时签名，尚未公证。
 - Agent 可使用内置的 27 个本地 MCP 工具，安装与配置见 [中文 MCP 指南](https://github.com/wuxiao00j/frame-studio/blob/main/docs/MCP.zh-CN.md)。
 - [中文使用指南](https://github.com/wuxiao00j/frame-studio/blob/main/docs/USER-GUIDE.zh-CN.md)。
@@ -24,15 +24,15 @@ Form / Section 保留常见分组卡片、标题、内边距和行分隔线；�
 
 An update to the public Beta of a native SwiftUI Mac UI designer, with 43 components, long pages, standard / wide layouts, uploaded icons, two-state Tab icons, reusable composites and source-based UI import classification.
 
-This update improves SwiftUI form import: it expands allCases, raw values and static labels from enums without associated values, reads State(initialValue:) defaults, and resolves common Boolean combinations and nil fallbacks. This fixes variable names shown as options, lost initial selection and incorrectly included conditional hints.
+This update improves component reuse with seven generic bundled composites: mobile form text, date and choice rows, multiline notes, paired reminder options, grouped cards and modal navigation. They are available across projects and contain generic example content, not personal project data.
 
-Common Form / Section groups retain cards, headings, insets and row separators. Navigation titles and leading/trailing toolbar buttons become editable layers. Vertical text fields become multiline inputs. Added mobile form-row styling, initial selection and enabled-state properties; date values can come from agent-supplied runtime references. A simple dismiss() becomes prototype back navigation; save handlers and other business logic are neither executed nor implemented.
+The library groups bundled, personal and project templates by category and searches names and categories. When saving a composite, enter a category and optionally save it to the personal library for reuse in other projects. Existing project templates can be copied to the personal library or recategorized through their context menu. Saving the same template again updates its personal copy.
 
-Added properties work in Mac previews, SwiftUI, Compose and Flutter source exports, and MCP. Complex custom forms, unspecified dates or runtime states, platform font metrics and system glass effects still require visual comparison.
+The local personal library retains all six layouts, icons, gradients, masks and form attributes. Insertion creates independent layers and clears links to pages absent from the destination project. Library writes use revision checks and atomic saves. MCP retains 27 tools with added category and bundled-template metadata. Legacy templates without a category display a suggested category. Exports remain UI source only.
 
 **Exports contain UI source, assets, project configuration and design files only. They do not produce APK, AAB, IPA or installable mobile applications.** Prototype navigation, switches and forms are not completed business features. Production application logic remains development work.
 
-- Download `FrameStudio-v1.2.0-beta.8-macOS-arm64.zip`, unzip it and move the application into Applications.
+- Download `FrameStudio-v1.2.0-beta.9-macOS-arm64.zip`, unzip it and move the application into Applications.
 - Requires Apple Silicon and macOS 14+. The Beta is ad-hoc signed and not notarized.
 - Agents can use the 27 bundled local MCP tools. See the [English MCP guide](https://github.com/wuxiao00j/frame-studio/blob/main/docs/MCP.en.md).
 - [English user guide](https://github.com/wuxiao00j/frame-studio/blob/main/docs/USER-GUIDE.en.md).

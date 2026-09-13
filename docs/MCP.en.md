@@ -160,3 +160,10 @@ Render a native static preview with `FrameStudio --render-preview --project FILE
 `controlStyle` accepts `standard` or `formRow`; formRow applies to textField, textArea, dateField and selectField. `selectedIndex` is a zero-based initial option index, clamped to existing choices for display. `isEnabled: false` disables prototype interaction and shows a disabled state. All three fields support update_component and null resets, retaining expectedRevision and atomic-write checks.
 
 Enum choices and State(initialValue:) defaults participate in non-executing parsing. Verify runtime values such as dates against the real UI before supplying values overrides; do not guess unresolved business data. Buttons containing only dismiss() support prototype back navigation. Save handlers and other business closures are not executed.
+
+
+## Beta.9
+
+`ComponentTemplate.category` is an optional category string (up to 64 characters). create_component_template accepts category; list_components returns templateCategories, builtinTemplates and projectTemplateCategories suggestions. insert_component_template accepts stable bundled template IDs; a project template with the same ID takes precedence. To recategorize existing templates, read get_project, update templates[].category and call replace_project with expectedRevision.
+
+The local personal library is a standard design file at `~/Library/Application Support/FrameStudio/PersonalComponents.framestudio`. An agent can connect a separate MCP process to it, read its latest revision, update templates and atomically submit replace_project. Copying into another design requires that design's own latest revision. Preserve explicit variant frames, uploaded assets and attributes without mixing unrelated pages. The personal library is not automatically uploaded with GitHub releases or source exports. Use the desktop library refresh button after external changes.

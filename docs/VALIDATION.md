@@ -38,3 +38,8 @@ Layer-list regression coverage verifies individual and Shift selection without c
 Beta.8 adds isolated regression fixtures for enum choices, ambiguous case names, initial selection, State initializers, false conditional hints, comparison text as data, form grouping, toolbar placement and disabled save actions. The native rendered form is compared with an explicitly opened original-app simulator form. Cross-platform checks include form-row controls, initial selection and disabled prototype navigation. / Beta.8 使用隔离样例检查枚举选项、重名枚举值、默认选中项、State 初始化、错误条件提示、比较符号文本、表单分组、工具栏位置与禁用保存按钮，并将原生渲染表单与按用户要求打开的模拟器表单对照；三平台检查包含表单行、初始选项和禁用的原型导航。
 
 Beta.8 local checks passed 82 Swift tests and 36 Flutter widget/unit checks, actual MCP acceptance, Kotlin compilation and SwiftUI source type checking. The private 37-page draft also passed three source exports and a SwiftUI type check. Hidden navigation and nil optional-date initialization have dedicated regression coverage. / Beta.8 本机通过 82 项 Swift 测试、36 项 Flutter 检查、真实 MCP 验收、Kotlin 编译及 SwiftUI 类型检查；37 页私有草稿另行通过三平台源码导出与 SwiftUI 类型检查，并覆盖隐藏导航和空值日期初始化。
+
+
+Beta.9 adds checks for all seven bundled templates, independent insertion IDs, category compatibility, preserved rendering properties, personal-library reloads, stale/invalid-write rejection and reuse from a new editor project. Actual MCP acceptance exercises categorized template creation and bundled template insertion. / Beta.9 新增 7 个内置模板、独立插入 ID、旧分类兼容、渲染属性保留、个人库重新加载、过期或无效写入拒绝，以及新项目复用检查；真实 MCP 验收覆盖分类保存和内置模板插入。
+
+Beta.9 local verification passed 86 Swift tests, 36 Flutter checks, actual MCP acceptance, Kotlin compilation and SwiftUI source type checking. / Beta.9 本机通过 86 项 Swift 测试、36 项 Flutter 检查、真实 MCP 验收、Kotlin 编译与 SwiftUI 类型检查。
