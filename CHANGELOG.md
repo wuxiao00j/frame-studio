@@ -2,6 +2,8 @@
 
 ## 1.2.0-beta.6 — 2026-09-13
 
+补充 `.framestudio` 文件类型注册，并兼容旧工程文件的系统类型标记。 / Register the `.framestudio` document type and accept legacy document type metadata.
+
 新增可编辑的线性 / 径向渐变、色标、模糊及阴影色 / 偏移，覆盖 Mac 预览与三平台源码导出。修正透明叠加层遮挡正文、多行局部变量被当成图层、卡片标题操作插槽误判、固定背景层顺序和父圆角影响子图层的问题。
 
 SwiftUI 导入支持更多只读主题函数、命名元组 map、可伸缩横向布局、流式布局与 ViewThatFits 的分屏幕布局；Agent 可提供参考画布尺寸与顶部安全区。新增可重复运行的原生 PNG 预览命令。Android 的模糊与精细阴影在 Android 12+ 生效，较早系统保留原生阴影回退。

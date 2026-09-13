@@ -35,7 +35,7 @@ extension SwiftImportLayout {
         }
         if e.type=="Spacer"{return number(e.args["minLength"]) ?? 0}
         if e.type=="Image",e.args["systemName"] != nil{return style.font}
-        if ["Text","Button"].contains(e.type){return (text(e.args["$0"]) as NSString).size(withAttributes:[.font:NSFont.systemFont(ofSize:style.font)]).width+(e.type=="Button" ? 16:0)}
+        if ["Text","Button"].contains(e.type){return Double((text(e.args["$0"]) as NSString).size(withAttributes:[.font:NSFont.systemFont(ofSize:style.font)]).width)+(e.type=="Button" ? 16.0:0.0)}
         return 10
     }
 }
