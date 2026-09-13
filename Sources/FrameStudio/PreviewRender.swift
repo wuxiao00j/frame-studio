@@ -24,16 +24,33 @@ import AppKit
     let page:DesignPage
     let variant:Variant
     var offset:Double=0
+    var size:Dimensions {project.device.size(variant)}
+    var orderedNodes:[DesignNode] {
+        let visible=page.nodes.filter{$0.isVisible(in:variant)}
+        let background=visible.filter{$0.isFixed && $0.backgroundLayer==true}
+        let content=visible.filter{!$0.isFixed}
+        let overlay=visible.filter{$0.isFixed && $0.backgroundLayer != true}
+        return background+content+overlay
+    }
     var body:some View {
-        let size=project.device.size(variant)
         ZStack(alignment:.topLeading) {
             Color(hex:page.background)
-            ForEach(page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer==true}+page.nodes.filter{$0.isVisible(in:variant) && !$0.isFixed}+page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer != true}){node in
-                let r=node.frame(variant,device:project.device)
-                ComponentPreview(node:node,corners:page.corners(node,variant:variant,device:project.device),activePage:page.id)
-                    .frame(width:r.width,height:r.height)
-                    .position(x:r.midX,y:r.midY-(node.isFixed ? 0:offset))
+            ForEach(orderedNodes){node in
+                DesignPreviewNode(node:node,page:page,device:project.device,variant:variant,offset:offset)
             }
-        }.frame(width:size.width,height:size.height).clipped()
+        }.frame(width:CGFloat(size.width),height:CGFloat(size.height)).clipped()
+    }
+}
+@MainActor private struct DesignPreviewNode:View {
+    let node:DesignNode
+    let page:DesignPage
+    let device:DeviceProfile
+    let variant:Variant
+    let offset:Double
+    var rect:Rect {node.frame(variant,device:device)}
+    var body:some View {
+        ComponentPreview(node:node,corners:page.corners(node,variant:variant,device:device),activePage:page.id)
+            .frame(width:CGFloat(rect.width),height:CGFloat(rect.height))
+            .position(x:CGFloat(rect.midX),y:CGFloat(rect.midY-(node.isFixed ? 0:offset)))
     }
 }
