@@ -17,6 +17,7 @@
 - 开关左右排列、条形 / 环形 / 分段进度、百分比与当前值 / 总量。
 - 列表自动紧贴、外侧圆角；头像栏二维码与箭头可隐藏。
 - 渐变填充、模糊、阴影颜色与偏移；上传图标、Tab 默认 / 选中图标；已有 Tab 栏的页面共用全部配置，支持项目排序。
+- 图层列表支持单独选择组合成员、Shift 多选，并显示文字摘要；不必先解除整个组合。
 - 保留导入容器的嵌套裁剪；文字行数、行间距与最小字号比例可调，图片支持填满 / 适应 / 拉伸，新增磨砂材质。
 - 返回键默认左上角；预置组合拆分后自动解组，多选可重新组合、解组或保存复用。
 - SwiftUI、Jetpack Compose、Flutter **UI 源码导出**。
@@ -47,6 +48,7 @@ Frame Studio is a native SwiftUI macOS application for composing mobile UI scree
 - Leading / trailing switches and linear, circular or stepped progress with percentage or current / total labels.
 - Joined list rows with outer corners; optional profile QR and chevron icons.
 - Gradient fills, blur, shadow color/offsets, uploaded icons, default / selected Tab icons and item reordering; all existing Tab bars share their complete configuration.
+- The layer list supports selecting individual group members, Shift multi-selection and text summaries without ungrouping.
 - Retained nested import masks; editable text line limits, spacing and minimum scale; fill / fit / stretch image modes and frosted materials.
 - Top-left back buttons; decomposition automatically ungroups layers for editing, regrouping and reusable templates.
 - **UI source exports** for SwiftUI, Jetpack Compose and Flutter.

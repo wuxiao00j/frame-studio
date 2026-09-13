@@ -90,9 +90,9 @@ import StudioCore
         if pageID != id{pageHistory.append(pageID)}
         pageID=id;selection=[];sidebarOpen=false;scrollOffsets=[:]
     }
-    func select(_ node:DesignNode,additive:Bool=false) {
+    func select(_ node:DesignNode,additive:Bool=false,includingGroup:Bool=true) {
         if additive {if selection.contains(node.id){selection.remove(node.id)}else{selection.insert(node.id)}} else {selection=[node.id]}
-        if !node.groupID.isEmpty && !additive {selection=Set(page.nodes.filter{$0.groupID==node.groupID && ($0.visibleVariants?.contains(variant.rawValue) ?? true)}.map(\.id))}
+        if includingGroup && !node.groupID.isEmpty && !additive {selection=Set(page.nodes.filter{$0.groupID==node.groupID && ($0.visibleVariants?.contains(variant.rawValue) ?? true)}.map(\.id))}
     }
     func updateNode(_ id:String,body:(inout DesignNode)->Void) {
         change { p in guard let pi=p.pages.firstIndex(where:{$0.id==pageID}),let ni=p.pages[pi].nodes.firstIndex(where:{$0.id==id}) else{return};body(&p.pages[pi].nodes[ni]) }

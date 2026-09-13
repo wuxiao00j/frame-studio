@@ -70,3 +70,6 @@ SwiftUI 按 View 声明读取：数据 Store、属性包装器、模型和事件
 SwiftUI 用本地 Swift Package 或源码集成；Compose 使用导出的 Kotlin 页面和资源；Flutter 使用 Dart 页面和 assets。请先阅读导出目录中的说明和平台差异报告。
 
 [Agent / MCP 安装与使用](MCP.zh-CN.md) · [English](USER-GUIDE.en.md)
+
+
+图层列表支持单独选择组合成员、Shift 多选，并显示文字摘要；不必先解除整个组合。

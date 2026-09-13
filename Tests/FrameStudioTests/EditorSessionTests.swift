@@ -4,6 +4,19 @@ import StudioCore
 @testable import FrameStudio
 
 final class EditorSessionTests:XCTestCase {
+    func testLayerListSelectsMembersWithoutChangingTheirGroup() async throws {
+        try await MainActor.run {try withSession {session in
+            let ids=session.page.nodes.prefix(2).map(\.id)
+            session.selection=Set(ids);session.group()
+            let members=session.page.nodes.filter{ids.contains($0.id)},saved=session.project
+            session.select(members[0]);XCTAssertEqual(session.selection,Set(ids))
+            session.select(members[0],includingGroup:false);XCTAssertEqual(session.selection,[ids[0]])
+            session.select(members[1],additive:true,includingGroup:false);XCTAssertEqual(session.selection,Set(ids))
+            session.select(members[0],additive:true,includingGroup:false);XCTAssertEqual(session.selection,[ids[1]])
+            XCTAssertEqual(session.project,saved)
+            XCTAssertEqual(try ProjectStore.load(session.url),saved)
+        }}
+    }
     @MainActor func withSession(_ body:(EditorSession)throws->Void)throws {
         let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer{try? FileManager.default.removeItem(at:directory)}

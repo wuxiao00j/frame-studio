@@ -71,3 +71,6 @@ Beta.7 retains nested rectangle, rounded-rectangle, circle / ellipse and capsule
 Text layers now expose line limits, line spacing and minimum font scale in “文字排版”. Image layers offer fill, fit and stretch in “图片显示”. Import expands supported Text / View extension modifier chains, retains these rules, and fixes conditional theme paints and multiline Chinese text measurement.
 
 “背景材质” within “渐变与柔化” offers five frosted-material levels. Mac previews and SwiftUI exports use system Material; Flutter uses backdrop blur; Android Compose uses a translucent fill, disclosed in the export report. These do not reproduce full system Liquid Glass refraction or interactive animations, and static PNGs cannot fully capture live materials. System text-size preferences, unspecified runtime states and complex layouts still require target-device comparison.
+
+
+The layer list supports selecting individual group members, Shift multi-selection and text summaries without ungrouping.

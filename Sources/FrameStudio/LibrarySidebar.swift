@@ -47,5 +47,19 @@ import StudioCore
 @MainActor struct LayerRow:View {
     @Bindable var session:EditorSession
     let node:DesignNode
-    var body:some View {HStack(spacing:7){Image(systemName:node.kind.symbol).frame(width:20);Text(node.name).lineLimit(1);Spacer(minLength:0);Button{session.updateNode(node.id){$0.hidden.toggle()}}label:{Image(systemName:node.hidden ? "eye.slash" : "eye")};Button{session.updateNode(node.id){$0.locked.toggle()}}label:{Image(systemName:node.locked ? "lock.fill" : "lock.open")}}.font(.system(size:10)).buttonStyle(.plain).foregroundStyle(node.hidden ? studioMuted : studioInk).padding(9).background(session.selection.contains(node.id) ? Color(hex:"F0EBFC") : .clear,in:RoundedRectangle(cornerRadius:6)).contentShape(Rectangle()).onTapGesture{session.select(node,additive:NSEvent.modifierFlags.contains(.shift))}}
+    var body:some View {
+        HStack(spacing:7) {
+            Image(systemName:node.kind.symbol).frame(width:20)
+            VStack(alignment:.leading,spacing:3) {
+                Text(node.name).lineLimit(1)
+                if !node.text.isEmpty && node.text != node.name {Text(node.text).font(.system(size:9)).foregroundStyle(studioMuted).lineLimit(1)}
+            }
+            Spacer(minLength:0)
+            Button{session.updateNode(node.id){$0.hidden.toggle()}}label:{Image(systemName:node.hidden ? "eye.slash" : "eye")}
+            Button{session.updateNode(node.id){$0.locked.toggle()}}label:{Image(systemName:node.locked ? "lock.fill" : "lock.open")}
+        }.font(.system(size:10)).buttonStyle(.plain).foregroundStyle(node.hidden ? studioMuted : studioInk).padding(9)
+            .background(session.selection.contains(node.id) ? Color(hex:"F0EBFC") : .clear,in:RoundedRectangle(cornerRadius:6))
+            .contentShape(Rectangle()).help("选择单个图层；Shift 多选，不会解除原有组合")
+            .onTapGesture{session.select(node,additive:NSEvent.modifierFlags.contains(.shift),includingGroup:false)}
+    }
 }

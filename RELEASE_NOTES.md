@@ -4,6 +4,8 @@
 
 公开 Beta 更新（包含之前版本功能）：原生 SwiftUI Mac UI 设计器，支持 43 种组件、长页面、标准 / 阔屏布局、图标上传、Tab 双态图标、自定义组合，以及旧 UI 源码分类导入。
 
+图层列表支持单独选择组合成员、Shift 多选，并显示文字摘要；不必先解除整个组合。
+
 Beta.7 保留矩形、圆角矩形、圆形 / 椭圆和胶囊的嵌套裁剪，横竖屏独立存储。裁剪边界随拆分图层移动、缩放；选择图层后可在“导入的容器裁剪”中解除，并用撤销恢复。任意自定义 Path、渐变透明度蒙版和组合级混合效果仍需人工还原。
 
 文字组件新增“文字排版”：限制行数、行间距和最小字号比例。图片组件新增“图片显示”：填满裁剪、完整显示或拉伸。导入器展开支持的 Text / View 扩展修饰器链，保留这些规则，并修正主题条件颜色与中文多行测量。
@@ -23,6 +25,8 @@ Beta.7 保留矩形、圆角矩形、圆形 / 椭圆和胶囊的嵌套裁剪，�
 ## English · Beta preview
 
 An update to the public Beta of a native SwiftUI Mac UI designer, with 43 components, long pages, standard / wide layouts, uploaded icons, two-state Tab icons, reusable composites and source-based UI import classification.
+
+The layer list supports selecting individual group members, Shift multi-selection and text summaries without ungrouping.
 
 Beta.7 retains nested rectangle, rounded-rectangle, circle / ellipse and capsule masks separately for each orientation. Masks move and scale with decomposed layers. Select a layer and use “导入的容器裁剪” to remove its retained masks; Undo restores them. Arbitrary custom Paths, gradient alpha masks and group compositing still need manual reconstruction.
 
