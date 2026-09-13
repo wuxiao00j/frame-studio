@@ -39,16 +39,17 @@ import UniformTypeIdentifiers
             HStack(spacing:8){Circle().fill(session.variant==variant ? studioAccent : studioMuted.opacity(0.5)).frame(width:6,height:6);Text(variant.title).fontWeight(.medium);Spacer();Text("\(Int(size.width)) × \(Int(size.height)) · 内容 \(Int(session.page.contentHeight(variant,device:session.project.device)))").monospacedDigit().foregroundStyle(studioMuted)}.font(.system(size:11)).frame(width:size.width*zoom)
             ZStack(alignment:.topLeading){
                 Color(hex:session.page.background).onTapGesture{session.selection=[];session.variant=variant}
+                ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer==true}){node in CanvasNode(session:session,node:node,variant:variant)}
                 ScrollView(.vertical,showsIndicators:session.page.isScrollable) {
                     ZStack(alignment:.topLeading) {
                         Color.clear.contentShape(Rectangle()).onTapGesture{session.selection=[];session.variant=variant}
-                        ForEach(session.page.nodes.filter{!$0.hidden && !$0.isFixed}){node in CanvasNode(session:session,node:node,variant:variant)}
+                        ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && !$0.isFixed}){node in CanvasNode(session:session,node:node,variant:variant)}
                     }.frame(width:size.width,height:session.page.contentHeight(variant,device:session.project.device))
                         .background(GeometryReader{proxy in Color.clear.preference(key:ArtboardScrollKey.self,value:-proxy.frame(in:.named(variant.rawValue)).minY)})
                 }.coordinateSpace(name:variant.rawValue).scrollDisabled(!session.page.isScrollable)
                     .onPreferenceChange(ArtboardScrollKey.self){offset in session.scrollOffsets[variant]=max(0,offset)}
                     .id(session.pageID+variant.rawValue)
-                ForEach(session.page.nodes.filter{!$0.hidden && $0.isFixed}){node in CanvasNode(session:session,node:node,variant:variant)}
+                ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer != true}){node in CanvasNode(session:session,node:node,variant:variant)}
                 if session.sidebarOpen {SidebarOverlay(session:session,size:size)}
                 HStack{Text("9:41").fontWeight(.semibold);Spacer();Image(systemName:"cellularbars");Image(systemName:"wifi");Image(systemName:"battery.100percent")}.font(.system(size:12)).foregroundStyle(Color(hex:"252336")).padding(.horizontal,26).frame(width:size.width,height:44).background(Color(hex:session.page.background)).allowsHitTesting(false)
                 if session.variant==variant,let x=session.guideX{Path{p in p.move(to:CGPoint(x:x,y:0));p.addLine(to:CGPoint(x:x,y:size.height))}.stroke(Color.pink,lineWidth:1/zoom).allowsHitTesting(false)}

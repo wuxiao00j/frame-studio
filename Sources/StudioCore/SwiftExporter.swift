@@ -103,12 +103,14 @@ public enum SwiftExporter {
     }
     static func pageSource(_ page:DesignPage,project:DesignProject)->String {
         let nodes=page.nodes.filter{!$0.hidden}
-        func content(fixed:Bool)->String {
-            nodes.enumerated().filter{$0.element.isFixed==fixed}.map{i,n in
+        func content(fixed:Bool,background:Bool=false)->String {
+            nodes.enumerated().filter{$0.element.isFixed==fixed && (!fixed || ($0.element.backgroundLayer==true)==background)}.map{i,n in
                 let frames=Variant.allCases.map{v in let r=n.frame(v,device:project.device);return "CGRect(x: \(number(r.x)), y: \(number(r.y)), width: \(number(r.width)), height: \(number(r.height)))"}.joined(separator:", ")
                 let refs=Variant.allCases.map{v in let d=project.device.size(v);return "CGSize(width: \(number(d.width)), height: \(number(fixed ? d.height:page.contentHeight(v,device:project.device))))"}.joined(separator:", ")
                 let size=fixed ? "proxy.size":"CGSize(width: proxy.size.width, height: contentHeight)"
-                return "element\(i).designPlaced(frames: [\(frames)], references: [\(refs)], variant: variant, size: \(size), anchor: \(literal(n.anchor.rawValue)))"
+                let view="element\(i).designPlaced(frames: [\(frames)], references: [\(refs)], variant: variant, size: \(size), anchor: \(literal(n.anchor.rawValue)))"
+                if let variants=n.visibleVariants {let allowed=variants.compactMap{Variant(rawValue:$0)}.compactMap{Variant.allCases.firstIndex(of:$0)}.map(String.init).joined(separator:",");return "if [\(allowed)].contains(variant) { \(view) }"}
+                return view
             }.joined(separator:"\n")
         }
         let heights=Variant.allCases.map{number(page.contentHeight($0,device:project.device))}.joined(separator:", ")
@@ -127,10 +129,11 @@ public enum SwiftExporter {
                         .font(.system(size: \(number(n.fontSize)), weight: .\(weight)))
                         .foregroundStyle(Color(designHex: \(literal(n.foreground))))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .\(align))
-                        .background(Color(designHex: \(literal(n.fill))))
+                        .background(\([ComponentKind.circle,.rectangle,.divider].contains(n.kind) ? "Color.clear":paintExpression(n)))
                         .clipShape(\(shape))
                         .overlay(\(shape).stroke(Color(designHex: \(literal(n.borderColor))), lineWidth: \(number(n.borderWidth))))
-                        .shadow(color: .black.opacity(\(n.shadow>0 ? "0.09" : "0")), radius: \(number(n.shadow)), y: \(number(n.shadow/3)))
+                        .shadow(color: Color(designHex: \(literal(n.shadowColor ?? (n.shadow>0 ? "00000017":"00000000")))), radius: \(number(n.shadow)), x: \(number(n.shadowX ?? 0)), y: \(number(n.shadowY ?? n.shadow/3)))
+                        .blur(radius: \(number(n.blurRadius ?? 0)))
                         .opacity(\(number(n.opacity))).rotationEffect(.degrees(\(number(n.rotation))))
                 }
             """
@@ -146,6 +149,7 @@ public enum SwiftExporter {
                     let contentHeight = max(proxy.size.height, [\(heights)][variant])
                     ZStack(alignment: .topLeading) {
                         Color(designHex: \(literal(page.background)))
+                        \(content(fixed:true,background:true))
                         \(scrolling)
                         \(content(fixed:true))
                     }.frame(width: proxy.size.width, height: proxy.size.height).clipped()
@@ -154,6 +158,12 @@ public enum SwiftExporter {
         \(views)
         }
         """
+    }
+    static func paintExpression(_ n:DesignNode)->String {
+        guard let g=n.gradient else{return "Color(designHex: \(literal(n.fill)))"}
+        let stops=g.stops.map{"Gradient.Stop(color: Color(designHex: \(literal($0.color))), location: \(number($0.location)))"}.joined(separator:", ")
+        if g.kind=="radial" {return "RadialGradient(gradient: Gradient(stops: [\(stops)]), center: UnitPoint(x: \(number(g.startX)), y: \(number(g.startY))), startRadius: \(number(g.startRadius)), endRadius: \(number(g.endRadius)))"}
+        return "LinearGradient(gradient: Gradient(stops: [\(stops)]), startPoint: UnitPoint(x: \(number(g.startX)), y: \(number(g.startY))), endPoint: UnitPoint(x: \(number(g.endX)), y: \(number(g.endY))))"
     }
     static func expression(_ n:DesignNode,pageID:String)->String {
         let t=literal(n.text),sub=literal(n.subtitle),symbol=literal(n.symbol),pad=number(n.padding),gap=number(n.spacing),icon=number(n.iconSize),accent="Color(designHex: \(literal(n.accent)))"
@@ -187,7 +197,7 @@ public enum SwiftExporter {
             return n.kind == .tabBar ? "HStack(spacing: 0) { \(buttons) }.padding(.horizontal, 6)" : "VStack(alignment: .leading, spacing: \(gap)) { Text(\(t)); \(buttons); Spacer(minLength: 0) }.padding(\(pad))"
         case .listRow:return "Button { navigate(\(literal(n.targetPageID.isEmpty ? pageID : n.targetPageID))) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+".foregroundStyle(\(accent)); " : "")VStack(alignment: .leading, spacing: 5) { Text(\(t)); Text(\(sub)).font(.system(size: \(number(max(10,n.fontSize-4))))).opacity(0.45) }; Spacer(minLength: 0); \(n.hasChevron ? chevron+".opacity(0.3)":"EmptyView()") }.padding(\(pad)) }.buttonStyle(.plain)"
         case .card:return "VStack(alignment: .leading, spacing: \(gap)) { \(glyphExpression(n.symbol,n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):nil,n.iconSize+6)).foregroundStyle(\(accent)); Spacer(minLength: 0); Text(\(t)).fontWeight(.semibold); Text(\(sub)).font(.system(size: \(number(max(11,n.fontSize-5))))).opacity(0.5) }.frame(maxWidth: .infinity, alignment: .leading).padding(\(number(n.padding+4)))"
-        case .divider:return "Color(designHex: \(literal(n.fill)))"
+        case .divider:return paintExpression(n)
         case .toggle,.switchControl:return "DesignerToggle(title: \(t), initial: \(n.isOn), leading: \(n.position=="leading"), showLabel: \(n.hasLabel), showIcon: \(n.hasIcon), symbol: \(symbol), asset: \(literal(n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):"")), iconSize: \(icon), gap: \(gap), accent: \(accent)).padding(.horizontal, \(pad))"
         case .textField,.searchField:return "DesignInput(placeholder: \(t), symbol: \(literal(n.kind == .searchField ? n.symbol : "")), asset: \(literal(n.kind == .searchField && n.iconData != nil ? DesignExporter.iconAssetName(n,"icon"):""))).padding(.horizontal, \(pad))"
         case .badge:return "Text(\(t)).frame(maxWidth: .infinity, maxHeight: .infinity)"
@@ -203,8 +213,8 @@ public enum SwiftExporter {
         case .dateField:return "DesignerDate(title: \(t), initial: \(literal(n.dateValue ?? "2026-01-01"))).padding(.horizontal, \(pad))"
         case .rating:return "DesignerRating(initial: \(number(n.number)), count: \(Int(n.maximum)), size: \(icon), gap: \(gap), accent: \(accent))"
         case .loading:return "ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)"
-        case .rectangle:return "Color(designHex: \(literal(n.fill)))"
-        case .circle:return "Circle().fill(Color(designHex: \(literal(n.fill))))"
+        case .rectangle:return paintExpression(n)
+        case .circle:return "Circle().fill(\(paintExpression(n)))"
         case .spacer:return "Color.clear"
         case .qrCode,.chevron:return "\(leadingIcon).frame(maxWidth: .infinity, maxHeight: .infinity).onTapGesture { navigate(\(literal(n.targetPageID))) }"
         case .statistic:return "VStack(alignment: .leading, spacing: 8) { HStack { \(n.hasIcon ? leadingIcon+";":"")Text(\(t)).font(.system(size: 13)) }; Text(\(sub)).font(.system(size: \(number(n.fontSize)), weight: .semibold)) }.padding(\(pad))"

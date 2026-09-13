@@ -24,6 +24,10 @@ public enum ProjectStore {
         }
         let pages=Set(p.pages.map(\.id))
         for n in nodes {
+            try n.gradient?.validate()
+            if let variants=n.visibleVariants, !variants.allSatisfy({Variant(rawValue:$0) != nil}){throw StudioError.invalid("组件可见布局无效")}
+            if let color=n.shadowColor{try validateColor(color)}
+            guard [n.blurRadius ?? 0,n.shadowX ?? 0,n.shadowY ?? 0].allSatisfy({$0.isFinite && abs($0)<=500}), (n.blurRadius ?? 0)>=0 else{throw StudioError.invalid("模糊或阴影参数无效")}
             guard n.targetPageID.isEmpty || pages.contains(n.targetPageID), n.items.allSatisfy({$0.pageID.isEmpty || pages.contains($0.pageID)}) else { throw StudioError.invalid("组件引用了不存在的页面") }
             guard Set(n.items.map(\.id)).count == n.items.count else { throw StudioError.invalid("导航项目 ID 重复") }
             for (key,r) in n.frames {

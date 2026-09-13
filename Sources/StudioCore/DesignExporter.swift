@@ -88,6 +88,7 @@ public enum DesignExporter {
         json["asset"]=node.imageData.isEmpty ? "" : "assets/\(assetName(node)).png"
         for (slot,data) in [("icon",node.iconData),("qr",node.qrIconData),("chevron",node.chevronIconData),("trailing",node.trailingIconData)]{json[slot+"Asset"]=(data?.isEmpty==false) ? "assets/\(iconAssetName(node,slot)).png":""}
         json["symbol"]=MaterialSymbols.key(node.symbol);json["trailingSymbol"]=MaterialSymbols.key(node.trailingSymbol ?? "square.and.pencil")
+        if let variants=node.visibleVariants{json["visibleVariants"]=variants.compactMap{Variant(rawValue:$0)}.compactMap{Variant.allCases.firstIndex(of:$0)}}
         json["fixed"]=node.isFixed;json["showIcon"]=node.hasIcon;json["showLabel"]=node.hasLabel;json["showQRCode"]=node.hasQRCode;json["showChevron"]=node.hasChevron;json["controlPosition"]=node.position
         json["progressStyle"]=node.progressMode;json["progressText"]=node.progressText;json["fraction"]=node.fraction;json["progressThickness"]=node.progressThickness ?? 6;json["progressSteps"]=node.progressSteps ?? 5;json["trackColor"]=node.trackColor ?? "E5E2ED"
         json["numberValue"]=node.number;json["minimumValue"]=node.minimum;json["maximumValue"]=node.maximum;json["stepValue"]=node.step;json["dateValue"]=node.dateValue ?? "2026-01-01"

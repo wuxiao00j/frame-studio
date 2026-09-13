@@ -92,7 +92,7 @@ import StudioCore
     }
     func select(_ node:DesignNode,additive:Bool=false) {
         if additive {if selection.contains(node.id){selection.remove(node.id)}else{selection.insert(node.id)}} else {selection=[node.id]}
-        if !node.groupID.isEmpty && !additive {selection=Set(page.nodes.filter{$0.groupID==node.groupID}.map(\.id))}
+        if !node.groupID.isEmpty && !additive {selection=Set(page.nodes.filter{$0.groupID==node.groupID && ($0.visibleVariants?.contains(variant.rawValue) ?? true)}.map(\.id))}
     }
     func updateNode(_ id:String,body:(inout DesignNode)->Void) {
         change { p in guard let pi=p.pages.firstIndex(where:{$0.id==pageID}),let ni=p.pages[pi].nodes.firstIndex(where:{$0.id==id}) else{return};body(&p.pages[pi].nodes[ni]) }
@@ -185,7 +185,7 @@ import StudioCore
     }
 
     func setWide(_ wide:Bool) {change{$0.wideMode=wide};variant=visibleVariants[0];fitCanvases()}
-    func rotate() {landscape.toggle();variant=visibleVariants[0];fitCanvases()}
+    func rotate() {landscape.toggle();variant=visibleVariants[0];selection=Set(page.nodes.filter{selection.contains($0.id) && $0.isVisible(in:variant)}.map(\.id));fitCanvases()}
     func fitCanvases() {let total=visibleVariants.reduce(0.0){$0+project.device.size($1).width};let padding=88.0+Double(visibleVariants.count-1)*44;zoom=max(0.25,min(0.75,(canvasViewportWidth-padding)/total))}
     func copyLayout() {let from=variant;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices {let r=p.pages[i].nodes[j].frame(from,device:p.device),source=p.device.size(from);for v in visibleVariants where v != from {let target=p.device.size(v);p.pages[i].nodes[j].frames[v.rawValue]=Rect(r.x/source.width*target.width,r.y/source.height*target.height,r.width/source.width*target.width,r.height/source.height*target.height)}}};status="已将当前布局同步到另一块屏幕"}
     func newProject() {let panel=NSSavePanel();panel.nameFieldStringValue="未命名.framestudio";if panel.runModal() == .OK,let dest=panel.url {do{let p=try ProjectStore.save(.demo(),to:dest,expectedRevision:nil);adopt(p,url:dest)}catch{self.error=error.localizedDescription}}}

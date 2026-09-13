@@ -25,7 +25,7 @@ import StudioCore
                     }
                 }.padding(.horizontal,16).padding(.bottom,20)}
             }else{
-                ScrollView{VStack(spacing:3){ForEach(session.page.nodes.reversed()){node in LayerRow(session:session,node:node)}}.padding(.horizontal,10)}
+                ScrollView{VStack(spacing:3){ForEach(session.page.nodes.filter{$0.visibleVariants?.contains(session.variant.rawValue) ?? true}.reversed()){node in LayerRow(session:session,node:node)}}.padding(.horizontal,10)}
             }
             Divider()
             Button{session.showMCP=true}label:{HStack(spacing:10){Image(systemName:"point.3.connected.trianglepath.dotted").foregroundStyle(studioAccent);VStack(alignment:.leading,spacing:4){Text("与 Agent 一起设计").font(.system(size:11,weight:.medium));Text("MCP 本地连接").font(.system(size:9)).foregroundStyle(studioMuted)};Spacer();Circle().fill(Color(hex:"79A990")).frame(width:5,height:5)}}.buttonStyle(.plain).padding(16)

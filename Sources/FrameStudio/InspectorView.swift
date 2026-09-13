@@ -93,6 +93,7 @@ import StudioCore
             if node.kind == .profileRow || node.kind == .avatar{NumberField(label:"头像尺寸",value:binding(\.avatarSize))}
             HStack{Text("透明度").font(.system(size:10));Slider(value:binding(\.opacity),in:0...1);Text("\(Int(node.opacity*100))%").font(.system(size:10)).monospacedDigit()}
         }
+        FillEffectsInspector(session:session,node:node)
         if node.kind == .slider {InspectorSection(title:"滑块初始值"){Slider(value:binding(\.value),in:0...1)}}
         if [.tabBar,.sidebar,.segmented,.selectField].contains(node.kind){NavigationItemsInspector(session:session,node:node)}
         InspectorSection(title:"交互"){

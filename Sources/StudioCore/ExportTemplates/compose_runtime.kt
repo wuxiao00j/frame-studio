@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +49,15 @@ fun designColor(raw: String): Color {
     val argb = if (s.length == 8) ((n and 255L) shl 24) or (n shr 8) else 0xFF000000L or n
     return Color(argb)
 }
+fun designBrush(n:DesignSpec,size:Size,density:Float):Brush {
+    val data=n.data.optJSONObject("gradient") ?: return SolidColor(designColor(n.s("fill")))
+    val g=DesignSpec(data);val stops=data.getJSONArray("stops")
+    val pairs=(0 until stops.length()).map {val stop=DesignSpec(stops.getJSONObject(it));stop.n("location") to designColor(stop.s("color"))}
+    val start=Offset(g.n("startX")*size.width,g.n("startY")*size.height)
+    if(g.s("kind")=="radial") {val radius=g.n("endRadius",200.0)*density;val inner=g.n("startRadius")*density/radius;return Brush.radialGradient(*pairs.map{(inner+(1-inner)*it.first) to it.second}.toTypedArray(),center=start,radius=radius)}
+    return Brush.linearGradient(*pairs.toTypedArray(),start=start,end=Offset(g.n("endX",1.0)*size.width,g.n("endY",1.0)*size.height))
+}
+fun Modifier.designPaint(n:DesignSpec):Modifier = drawBehind {drawRect(designBrush(n,size,density))}
 fun designIcon(key: String): ImageVector = when(key) {
     "menu" -> Icons.Default.Menu; "home" -> Icons.Default.Home; "star" -> Icons.Default.AutoAwesome
     "favorite" -> Icons.Default.Favorite; "person" -> Icons.Default.AccountCircle; "chat" -> Icons.Default.ChatBubbleOutline
@@ -70,6 +81,7 @@ fun designIcon(key: String): ImageVector = when(key) {
     BoxWithConstraints(Modifier.fillMaxSize().background(background).clipToBounds()) {
         val width=maxWidth.value;val viewportHeight=maxHeight.value
         val contentHeight=if(scrollable) max(viewportHeight,heights[variant]) else viewportHeight
+        DesignLayer(pageID,nodes.filter{it.b("fixed") && it.b("backgroundLayer")},variant,width,viewportHeight,navigate,openSidebar,custom)
         key(pageID,variant) {
             if(scrollable) {
                 Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -77,23 +89,27 @@ fun designIcon(key: String): ImageVector = when(key) {
                 }
             }else {DesignLayer(pageID,nodes.filter{!it.b("fixed")},variant,width,contentHeight,navigate,openSidebar,custom)}
         }
-        DesignLayer(pageID,nodes.filter{it.b("fixed")},variant,width,viewportHeight,navigate,openSidebar,custom)
+        DesignLayer(pageID,nodes.filter{it.b("fixed") && !it.b("backgroundLayer")},variant,width,viewportHeight,navigate,openSidebar,custom)
     }
 }
 @Composable private fun DesignLayer(pageID:String,nodes:List<DesignSpec>,variant:Int,width:Float,height:Float,navigate:(String)->Unit,openSidebar:()->Unit,custom: @Composable (String) -> Unit) {
     val density=LocalDensity.current.density
-    nodes.forEach { n -> key(n.s("id")) {
+    nodes.filter {n->n.data.optJSONArray("visibleVariants")?.let{a->(0 until a.length()).any{a.getInt(it)==variant}} ?: true}.forEach { n -> key(n.s("id")) {
         val f=n.layout(variant);val dx=width-f.n("refWidth");val dy=height-f.n("refHeight");val anchor=n.s("anchor")
         val w=max(1f,f.n("width")+if(anchor=="stretch") dx else 0f)
         val x=f.n("x")+when(anchor){"topRight","bottomRight"->dx;"center"->dx/2;else->0f}
         val y=f.n("y")+when(anchor){"bottomLeft","bottomRight"->dy;"center"->dy/2;else->0f}
         val shape=RoundedCornerShape(topStart=f.n("tl").dp,topEnd=f.n("tr").dp,bottomStart=f.n("bl").dp,bottomEnd=f.n("br").dp)
+        val customShadow=n.s("shadowColor").isNotEmpty() && android.os.Build.VERSION.SDK_INT>=31
         Box(Modifier.offset { IntOffset((x*density).roundToInt(),(y*density).roundToInt()) }.requiredSize(w.dp,f.n("height").dp)
             .graphicsLayer { alpha=n.n("opacity",1.0); rotationZ=n.n("rotation") }
-            .shadow(n.n("shadow").dp,shape).clip(shape).background(designColor(n.s("fill")))
+            .blur(n.n("blurRadius").dp,edgeTreatment=BlurredEdgeTreatment.Unbounded)) {
+            if(customShadow && n.n("shadow")>0) Box(Modifier.matchParentSize().offset(n.n("shadowX").dp,n.n("shadowY").dp).blur(n.n("shadow").dp,edgeTreatment=BlurredEdgeTreatment.Unbounded).clip(shape).background(designColor(n.s("shadowColor"))))
+            Box(Modifier.matchParentSize().shadow((if(customShadow) 0f else n.n("shadow")).dp,shape,ambientColor=if(n.s("shadowColor").isEmpty()) Color.Black else designColor(n.s("shadowColor")),spotColor=if(n.s("shadowColor").isEmpty()) Color.Black else designColor(n.s("shadowColor"))).clip(shape).then(if(n.s("kind")=="circle") Modifier else Modifier.designPaint(n))
             .then(if(n.n("borderWidth")>0) Modifier.border(n.n("borderWidth").dp,designColor(n.s("borderColor")),shape) else Modifier)) {
             CompositionLocalProvider(LocalContentColor provides designColor(n.s("foreground"))) {
                 ProvideTextStyle(TextStyle(fontSize=n.n("fontSize",16.0).sp,fontWeight=when(n.s("fontWeight")){"bold"->FontWeight.Bold;"semibold"->FontWeight.SemiBold;"medium"->FontWeight.Medium;else->FontWeight.Normal},textAlign=when(n.s("textAlignment")){"center"->TextAlign.Center;"trailing"->TextAlign.End;else->TextAlign.Start})) {DesignContent(n,pageID,navigate,openSidebar,custom)}
+            }
             }
         }
     } }
@@ -129,7 +145,7 @@ fun designIcon(key: String): ImageVector = when(key) {
         "sidebar" -> Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(gap)) {Text(n.s("text"),fontWeight=FontWeight.SemiBold);n.items.forEach { item -> Row(Modifier.fillMaxWidth().clickable {navigate(item.s("pageID"))}.padding(vertical=12.dp),verticalAlignment=Alignment.CenterVertically) {Glyph(n,key=item.s("symbol"),asset=item.s("iconAsset"));Spacer(Modifier.width(gap));Text(item.s("title"))} } }
         "listRow" -> Row(Modifier.fillMaxSize().clickable(onClick=go).padding(horizontal=pad),verticalAlignment=Alignment.CenterVertically) {if(n.b("showIcon")){Glyph(n);Spacer(Modifier.width(gap))};Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)) {Text(n.s("text"));if(n.s("subtitle").isNotEmpty()) Text(n.s("subtitle"),fontSize=max(10f,n.n("fontSize")-4).sp,color=foreground.copy(alpha=0.45f))};if(n.b("showChevron"))Glyph(n,16f,foreground.copy(alpha=0.3f),"chevronRight",n.s("chevronAsset"))}
         "card" -> Column(Modifier.fillMaxSize().padding(pad+4.dp),verticalArrangement=Arrangement.spacedBy(gap)) {if(n.b("showIcon"))Glyph(n,n.n("iconSize")+6);Spacer(Modifier.weight(1f));Text(n.s("text"),fontWeight=FontWeight.SemiBold);Text(n.s("subtitle"),fontSize=max(11f,n.n("fontSize")-5).sp,color=foreground.copy(alpha=0.5f))}
-        "divider" -> Box(Modifier.fillMaxSize().background(designColor(n.s("fill"))))
+        "divider" -> Spacer(Modifier.fillMaxSize())
         "toggle","checkbox","radio","switchControl" -> Row(Modifier.fillMaxSize().padding(horizontal=pad),verticalAlignment=Alignment.CenterVertically) {
             val choice: @Composable () -> Unit={when(n.s("kind")){"checkbox"->Checkbox(enabled,{enabled=it},colors=CheckboxDefaults.colors(checkedColor=accent));"radio"->RadioButton(enabled,{enabled=!enabled},colors=RadioButtonDefaults.colors(selectedColor=accent));else->Switch(enabled,{enabled=it},colors=SwitchDefaults.colors(checkedTrackColor=accent))}}
             if(n.s("controlPosition")=="leading"){choice();Spacer(Modifier.width(gap))}
@@ -150,8 +166,8 @@ fun designIcon(key: String): ImageVector = when(key) {
         "dateField" -> Row(Modifier.fillMaxSize().clickable{val parser=SimpleDateFormat("yyyy-MM-dd",Locale.US);val calendar=Calendar.getInstance();calendar.time=parser.parse(date)?:calendar.time;DatePickerDialog(context,{_,year,month,day->date=String.format(Locale.US,"%04d-%02d-%02d",year,month+1,day)},calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH)).show()}.padding(horizontal=pad),verticalAlignment=Alignment.CenterVertically){Text("${n.s("text")}  $date",Modifier.weight(1f));Icon(Icons.Default.CalendarToday,null,Modifier.size(20.dp))}
         "rating" -> Row(Modifier.fillMaxSize(),horizontalArrangement=Arrangement.spacedBy(gap,Alignment.CenterHorizontally),verticalAlignment=Alignment.CenterVertically){for(i in 1..n.n("maximumValue",5.0).toInt()){Icon(if(i<=number) Icons.Default.Star else Icons.Default.StarBorder,null,Modifier.size(n.n("iconSize").dp).clickable{number=i.toFloat()},tint=accent)}}
         "loading" -> Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(Modifier.size(24.dp),color=accent,strokeWidth=3.dp)}
-        "rectangle" -> Box(Modifier.fillMaxSize().background(designColor(n.s("fill"))))
-        "circle" -> Box(Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.CircleShape).background(designColor(n.s("fill"))))
+        "rectangle" -> Spacer(Modifier.fillMaxSize())
+        "circle" -> Box(Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.CircleShape).designPaint(n))
         "spacer" -> Spacer(Modifier.fillMaxSize())
         "qrCode","chevron" -> Box(Modifier.fillMaxSize().clickable(onClick=go),contentAlignment=Alignment.Center){Glyph(n,color=foreground)}
         "statistic" -> Column(Modifier.fillMaxSize().padding(pad),verticalArrangement=Arrangement.Center){Row(verticalAlignment=Alignment.CenterVertically){if(n.b("showIcon")){Glyph(n);Spacer(Modifier.width(8.dp))};Text(n.s("text"),fontSize=13.sp)};Spacer(Modifier.height(8.dp));Text(n.s("subtitle"),fontSize=n.n("fontSize").sp,fontWeight=FontWeight.SemiBold)}

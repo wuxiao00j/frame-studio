@@ -5,12 +5,20 @@ enum SwiftStructuredImporter {
     static func inspect(files:[URL],assets:[URL],options:SwiftImportOptions)->ImportReport {
         let index=SwiftViewIndex(files:files),builder=SwiftViewBuilder(index:index,options:options),layout=SwiftImportLayout(builder:builder,assets:assets)
         var tabs:[Tab]=[],tabOwners=Set<String>()
+        var tabTint:String?
         for definition in index.views.values.sorted(by:{$0.name<$1.name}) {
             for member in definition.members.values {
                 let tokens=member.body
                 for start in tokens.indices where tokens[start].text=="TabView" {
                     var cursor=start
                     guard let root=builder.call(tokens,&cursor),let content=root.closures["$body"] else{continue}
+                    var after=cursor
+                    while after<tokens.count {
+                        while after<tokens.count && tokens[after].text=="\n"{after+=1}
+                        guard after<tokens.count,tokens[after].text=="." else{break};after+=1
+                        guard let modifier=builder.call(tokens,&after) else{break}
+                        if modifier.name=="tint",let value=modifier.args["$0"] {tabTint=layout.color(builder.resolve(value,SwiftImportContext(owner:definition.name,values:builder.defaults(definition))))}
+                    }
                     tabOwners.insert(definition.name);var i=0
                     while i<content.count {
                         let before=i
@@ -45,27 +53,41 @@ enum SwiftStructuredImporter {
         var pages=screenNames.map{name in DesignPage(name:tabs.first{$0.view==name}?.title ?? name)}
         let pageIDs=Dictionary(uniqueKeysWithValues:zip(screenNames,pages.map(\.id)))
         var counts:[String:Int]=[:]
-        let device=DeviceProfile()
+        var device=DeviceProfile();if let size=options.canvas{device.standard=size};report.device=device
+        let topInset=options.topInset ?? 52
         func render(_ name:String)->[DesignNode] {
             builder.created=0
             let tree=builder.build(name);var nodes:[DesignNode]=[]
+            func containsScroll(_ e:SwiftImportElement)->Bool {e.type=="ScrollView" && !SwiftSourceSyntax.text(e.args["$0"] ?? []).contains("horizontal") || e.children.contains(where:containsScroll)}
+            func pin(_ e:SwiftImportElement){e.pinned=true;for child in e.children{pin(child)}}
+            func markBackdrop(_ e:SwiftImportElement) {
+                if e.type=="ZStack",e.children.contains(where:containsScroll){for child in e.children where !containsScroll(child){pin(child)};return}
+                if e.children.count==1{markBackdrop(e.children[0])}
+            }
+            markBackdrop(tree)
             for variant in Variant.allCases {
-                var box=layout.layout(tree,width:device.size(variant).width)
-                box.move(0,52)
+                var box=layout.layout(tree,width:device.size(variant).width,height:device.size(variant).height-topInset)
+                box.move(0,topInset)
+                for i in box.nodes.indices where box.nodes[i].isFixed {
+                    var r=layout.rect(box.nodes[i]);r.y-=topInset
+                    if r.width>=device.size(variant).width-1 && r.height>=device.size(variant).height-topInset-1{r.height+=topInset}
+                    box.nodes[i].frames[Variant.standardPortrait.rawValue]=r
+                }
                 let valid=box.nodes.filter {n in let r=layout.rect(n);return r.x.isFinite && r.y.isFinite && r.y<39000 && r.width.isFinite && r.height.isFinite}
-                if variant == .standardPortrait {nodes=valid}
+                for node in valid where !nodes.contains(where:{$0.id==node.id}) {var node=node;node.frames=[:];node.visibleVariants=[];nodes.append(node)}
                 let frames=Dictionary(valid.map{($0.id,layout.rect($0))},uniquingKeysWith:{first,_ in first})
-                for i in nodes.indices {if let frame=frames[nodes[i].id]{nodes[i].frames[variant.rawValue]=frame}}
+                for i in nodes.indices {if let frame=frames[nodes[i].id]{nodes[i].frames[variant.rawValue]=frame;nodes[i].visibleVariants?.append(variant.rawValue)}}
             }
             // A reused local expression must have separate editable identities per occurrence.
             var seen=Set<String>()
-            for i in nodes.indices {if !seen.insert(nodes[i].id).inserted{nodes[i].id=UUID().uuidString}}
+            for i in nodes.indices {if nodes[i].visibleVariants?.count==Variant.allCases.count{nodes[i].visibleVariants=nil};if !seen.insert(nodes[i].id).inserted{nodes[i].id=UUID().uuidString}}
             return nodes
         }
         for (i,name) in screenNames.enumerated() {
-            pages[i].nodes=render(name);pages[i].scrollEnabled=true;pages[i].background="FFFFFF"
+            pages[i].nodes=render(name);pages[i].scrollEnabled=true;pages[i].background=pages[i].nodes.first(where:{$0.isFixed && $0.kind == .rectangle})?.fill ?? "FFFFFF"
             if tabs.contains(where:{$0.view==name}) {
                 var tab=DesignNode(kind:.tabBar);tab.cornerRadius=0;tab.shadow=0
+                if let tabTint{tab.accent=tabTint}
                 tab.items=tabs.map{NavigationItem(title:$0.title,symbol:$0.symbol,pageID:pageIDs[$0.view] ?? "")}
                 for variant in Variant.allCases {let size=device.size(variant);tab.frames[variant.rawValue]=Rect(0,size.height-80,size.width,64)}
                 pages[i].nodes.append(tab)

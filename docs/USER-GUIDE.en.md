@@ -35,6 +35,8 @@ Navigation and Tab bars are pinned by default; any component can be pinned or al
 
 When opening an older design with divergent Tabs, the first Tab in page order supplies the shared configuration. Reading alone does not rewrite the file; the next saved edit persists the unified result. The six screen variants remain independent, with each variant shared across pages.
 
+Use **渐变与柔化 / Gradient and effects** to enable gradients, edit stop colors, choose a linear direction or radial radius, and adjust blur and shadow color/offsets. Pinned background layers stay behind content. When ViewThatFits selects different branches by width, the canvas shows only the current variant's layers.
+
 ## Create composite components
 
 Shift-select primitive layers, click **创建组合 / Create composite** above the library, and save a name. Click the saved component later to insert another instance.
@@ -45,9 +47,9 @@ Supported profile, list, card, navigation, switch and button presets can be deco
 
 **导入旧 UI 项目 / Import existing UI** accepts a source file or directory. For SwiftUI, select the directory containing the Views, theme and assets so reusable components can resolve across files. After analysis, save a new `.framestudio` document. The current design is preserved and shared Tabs from different projects stay separate.
 
-SwiftUI import reads View declarations. Stores, property wrappers, models and event handlers do not become pages. Source-defined components are expanded where supported; common VStack / HStack / ZStack layouts, padding, frames, fonts, colors and radii retain their scopes. Tab destinations and sheets become pages; other reusable components go into the library. Flutter, Compose and JSX / HTML retain basic classification.
+SwiftUI import reads View declarations. Stores, property wrappers, models and event handlers do not become pages. Source-defined components are expanded where supported; common VStack / HStack / ZStack layouts, padding, frames, fonts, colors, radii, linear/radial gradients and blur retain their scopes. Tab destinations and sheets become pages; other reusable components go into the library. Flutter, Compose and JSX / HTML retain basic classification.
 
-The report separates component/reuse mappings, unmatched Views, reconstruction limitations and general notes. **Zero unmatched Views does not mean exact visual fidelity.** Dynamic text, authentication state, server data, computed themes, custom layouts, gradients and unsupported modifiers may still need agent-assisted reconstruction against source or a running reference. Lists can use a single sample or a declared default order. Unknown colors and images use explicit neutral placeholders.
+The report separates component/reuse mappings, unmatched Views, reconstruction limitations and general notes. **Zero unmatched Views does not mean exact visual fidelity.** Dynamic text, authentication state, server data, computed themes, custom layouts, system materials and unsupported modifiers may still need agent-assisted reconstruction against source or a running reference. Lists can use a single sample or a declared default order. Unknown colors and images use explicit neutral placeholders.
 
 Import never runs or modifies original code or reads the original app's authentication data. Compare against the intended theme and state, then address the reconstruction report.
 

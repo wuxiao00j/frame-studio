@@ -100,6 +100,13 @@ public struct DesignNode: Codable, Equatable, Identifiable, Sendable {
     public var symbol = "sparkles"
     public var imageData: String = ""
     public var fill = "FFFFFF"
+    public var gradient:DesignGradient?
+    public var backgroundLayer:Bool?
+    public var visibleVariants:[String]?
+    public var blurRadius:Double?
+    public var shadowColor:String?
+    public var shadowX:Double?
+    public var shadowY:Double?
     public var foreground = "252336"
     public var accent = "7560D4"
     public var borderColor = "E8E5F0"

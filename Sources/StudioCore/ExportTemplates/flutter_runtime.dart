@@ -1,10 +1,20 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 Color designColor(String value) {
   final s=value.replaceAll('#', '');
   final n=int.tryParse(s,radix:16) ?? 0;
   return Color(s.length==8 ? ((n & 255)<<24) | (n>>8) : 0xFF000000 | n);
+}
+Gradient? designGradient(Map<String,dynamic> spec,Size size) {
+ final raw=spec['gradient'];if(raw is! Map)return null;
+ final g=Map<String,dynamic>.from(raw);final entries=(g['stops'] as List).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
+ final colors=entries.map((e)=>designColor(e['color'] as String)).toList();
+ final stops=entries.map((e)=>(e['location'] as num).toDouble()).toList();
+ final start=Alignment(numProp(g,'startX')*2-1,numProp(g,'startY')*2-1);
+ if(g['kind']=='radial') {final radius=numProp(g,'endRadius',200),inner=numProp(g,'startRadius')/radius;return RadialGradient(colors:colors,stops:stops.map((v)=>inner+(1-inner)*v).toList(),center:start,radius:radius/math.max(1,math.min(size.width,size.height)));}
+ return LinearGradient(colors:colors,stops:stops,begin:start,end:Alignment(numProp(g,'endX',1)*2-1,numProp(g,'endY',1)*2-1));
 }
 IconData designIcon(String key) => switch(key) {
  'menu'=>Icons.menu,'home'=>Icons.home_outlined,'star'=>Icons.auto_awesome,'favorite'=>Icons.favorite,
@@ -36,11 +46,12 @@ class DesignCanvas extends StatelessWidget {
  const DesignCanvas({super.key,required this.pageID,required this.variant,required this.background,required this.specs,required this.navigate,required this.openSidebar,this.customBuilders=const {},this.scrollable=true,this.heights=const []});
  @override Widget build(BuildContext context) => LayoutBuilder(builder:(context,bounds) {
   final height=scrollable ? math.max(bounds.maxHeight,heights.isEmpty ? bounds.maxHeight:heights[variant]):bounds.maxHeight;
-  final content=SizedBox(width:bounds.maxWidth,height:height,child:Stack(clipBehavior:Clip.hardEdge,children:[for(final spec in specs) if(spec['fixed']!=true) _place(spec,Size(bounds.maxWidth,height))]));
+  final content=SizedBox(width:bounds.maxWidth,height:height,child:Stack(clipBehavior:Clip.hardEdge,children:[for(final spec in specs.where((s)=>s['visibleVariants']==null || (s['visibleVariants'] as List).contains(variant))) if(spec['fixed']!=true) _place(spec,Size(bounds.maxWidth,height))]));
   return Stack(clipBehavior:Clip.hardEdge,children:[
    Positioned.fill(child:ColoredBox(color:background)),
+   for(final spec in specs.where((s)=>s['visibleVariants']==null || (s['visibleVariants'] as List).contains(variant))) if(spec['fixed']==true && spec['backgroundLayer']==true) _place(spec,bounds.biggest),
    Positioned.fill(child:scrollable ? SingleChildScrollView(key:PageStorageKey('$pageID:$variant'),child:content):content),
-   for(final spec in specs) if(spec['fixed']==true) _place(spec,bounds.biggest),
+   for(final spec in specs.where((s)=>s['visibleVariants']==null || (s['visibleVariants'] as List).contains(variant))) if(spec['fixed']==true && spec['backgroundLayer']!=true) _place(spec,bounds.biggest),
   ]);
  });
  Widget _place(Map<String,dynamic> spec,Size size) {
@@ -79,7 +90,11 @@ class _DesignElementState extends State<DesignElement> {
  void go()=>widget.navigate(s('targetPageID'));
  @override Widget build(BuildContext context) {
   final f=Map<String,dynamic>.from(n['_corners'] as Map? ?? {});final radius=BorderRadius.only(topLeft:Radius.circular(numProp(f,'tl',d('cornerRadius'))),topRight:Radius.circular(numProp(f,'tr',d('cornerRadius'))),bottomLeft:Radius.circular(numProp(f,'bl',d('cornerRadius'))),bottomRight:Radius.circular(numProp(f,'br',d('cornerRadius'))));
-  return Transform.rotate(angle:d('rotation')*math.pi/180,child:Opacity(opacity:d('opacity',1),child:DecoratedBox(decoration:BoxDecoration(color:s('kind')=='circle' ? Colors.transparent:designColor(s('fill')),borderRadius:radius,boxShadow:d('shadow')>0 ? [BoxShadow(color:Colors.black.withValues(alpha:0.09),blurRadius:d('shadow'),offset:Offset(0,d('shadow')/3))]:null),child:ClipRRect(borderRadius:radius,child:DecoratedBox(position:DecorationPosition.foreground,decoration:BoxDecoration(borderRadius:radius,border:d('borderWidth')>0 ? Border.all(color:designColor(s('borderColor')),width:d('borderWidth')):null),child:content(context))))));
+  return LayoutBuilder(builder:(context,bounds) {
+   Widget result=DecoratedBox(decoration:BoxDecoration(color:s('kind')=='circle' ? Colors.transparent:designColor(s('fill')),gradient:s('kind')=='circle' ? null:designGradient(n,bounds.biggest),borderRadius:radius,boxShadow:d('shadow')>0 ? [BoxShadow(color:s('shadowColor').isEmpty ? Colors.black.withValues(alpha:0.09):designColor(s('shadowColor')),blurRadius:d('shadow'),offset:Offset(d('shadowX'),d('shadowY',d('shadow')/3)))]:null),child:ClipRRect(borderRadius:radius,child:DecoratedBox(position:DecorationPosition.foreground,decoration:BoxDecoration(borderRadius:radius,border:d('borderWidth')>0 ? Border.all(color:designColor(s('borderColor')),width:d('borderWidth')):null),child:content(context))));
+   if(d('blurRadius')>0)result=ImageFiltered(imageFilter:ui.ImageFilter.blur(sigmaX:d('blurRadius'),sigmaY:d('blurRadius')),child:result);
+   return Transform.rotate(angle:d('rotation')*math.pi/180,child:Opacity(opacity:d('opacity',1),child:result));
+  });
  }
  Widget content(BuildContext context) {
   final pad=d('padding',16),gap=d('spacing',12);
@@ -96,7 +111,7 @@ class _DesignElementState extends State<DesignElement> {
    case 'sidebar':return Padding(padding:EdgeInsets.all(pad),child:ListView(padding:EdgeInsets.zero,children:[text(s('text'),weight:FontWeight.w600),SizedBox(height:gap),for(final item in items) ListTile(contentPadding:EdgeInsets.zero,leading:icon(key:item['symbol'],asset:item['iconAsset']),title:text(item['title']),selected:item['pageID']==widget.activePage,onTap:()=>widget.navigate(item['pageID']))]));
    case 'listRow':return hit(Padding(padding:EdgeInsets.symmetric(horizontal:pad),child:Row(children:[if(n['showIcon']==true) ...[icon(),SizedBox(width:gap)],Expanded(child:Column(mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.start,children:[text(s('text')),if(s('subtitle').isNotEmpty) ...[const SizedBox(height:5),text(s('subtitle'),size:math.max(10,d('fontSize')-4),color:foreground.withValues(alpha:0.45))]])),if(n['showChevron']!=false) icon(key:'chevronRight',asset:s('chevronAsset'),size:16,color:foreground.withValues(alpha:0.3))])),go);
    case 'card':return Padding(padding:EdgeInsets.all(pad+4),child:LayoutBuilder(builder:(context,bounds)=>FittedBox(fit:BoxFit.scaleDown,alignment:Alignment.topLeft,child:SizedBox(width:math.max(1,bounds.maxWidth),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[if(n['showIcon']==true) ...[icon(size:d('iconSize')+6),SizedBox(height:gap)],text(s('text'),weight:FontWeight.w600),SizedBox(height:gap),text(s('subtitle'),size:math.max(11,d('fontSize')-5),color:foreground.withValues(alpha:0.5))])))));
-   case 'divider':return ColoredBox(color:designColor(s('fill')));
+   case 'divider':return const SizedBox.expand();
    case 'toggle':case 'checkbox':case 'radio':case 'switchControl':return Padding(padding:EdgeInsets.symmetric(horizontal:pad),child:Row(children:[
     if(s('controlPosition')=='leading') ...[choice(),SizedBox(width:gap)],
     if(n['showIcon']==true) ...[icon(),SizedBox(width:gap)],
@@ -116,8 +131,8 @@ class _DesignElementState extends State<DesignElement> {
    case 'dateField':return hit(Padding(padding:EdgeInsets.symmetric(horizontal:pad),child:Row(children:[Expanded(child:text('${s('text')}  ${date.year}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}')),const Icon(Icons.calendar_today,size:20)])),()async{final picked=await showDatePicker(context:context,initialDate:date,firstDate:DateTime(1900),lastDate:DateTime(2200));if(picked!=null&&mounted)setState(()=>date=picked);});
    case 'rating':return Center(child:FittedBox(fit:BoxFit.scaleDown,child:Row(mainAxisSize:MainAxisSize.min,children:[for(var i=1;i<=d('maximumValue',5).toInt();i++) Padding(padding:EdgeInsets.only(right:i==d('maximumValue',5).toInt()?0:gap),child:hit(Icon(i<=number?Icons.star:Icons.star_border,color:accent,size:d('iconSize')),()=>setState(()=>number=i.toDouble())))])));
    case 'loading':return Center(child:SizedBox(width:24,height:24,child:CircularProgressIndicator(color:accent,strokeWidth:3)));
-   case 'rectangle':return ColoredBox(color:designColor(s('fill')));
-   case 'circle':return DecoratedBox(decoration:BoxDecoration(color:designColor(s('fill')),shape:BoxShape.circle));
+   case 'rectangle':return const SizedBox.expand();
+   case 'circle':return LayoutBuilder(builder:(context,bounds)=>DecoratedBox(decoration:BoxDecoration(color:designColor(s('fill')),gradient:designGradient(n,bounds.biggest),shape:BoxShape.circle)));
    case 'spacer':return const SizedBox.expand();
    case 'qrCode':case 'chevron':return hit(Center(child:icon(color:foreground)),go);
    case 'statistic':return Padding(padding:EdgeInsets.all(pad),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Row(children:[if(n['showIcon']==true) ...[icon(),const SizedBox(width:8)],Expanded(child:text(s('text'),size:13))]),const SizedBox(height:8),text(s('subtitle'),size:d('fontSize'),weight:FontWeight.w600)]));

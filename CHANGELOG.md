@@ -1,5 +1,15 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.6 — 2026-09-13
+
+新增可编辑的线性 / 径向渐变、色标、模糊及阴影色 / 偏移，覆盖 Mac 预览与三平台源码导出。修正透明叠加层遮挡正文、多行局部变量被当成图层、卡片标题操作插槽误判、固定背景层顺序和父圆角影响子图层的问题。
+
+SwiftUI 导入支持更多只读主题函数、命名元组 map、可伸缩横向布局、流式布局与 ViewThatFits 的分屏幕布局；Agent 可提供参考画布尺寸与顶部安全区。新增可重复运行的原生 PNG 预览命令。Android 的模糊与精细阴影在 Android 12+ 生效，较早系统保留原生阴影回退。
+
+Added editable linear/radial gradients and stops, blur, shadow color and offsets across Mac previews and all three UI source exports. Fixed opaque overlays covering content, multiline locals becoming layers, header-action slot misclassification, pinned background order and parent radii leaking into child shapes.
+
+SwiftUI import now resolves more read-only theme functions and named-tuple maps, allocates flexible rows, wraps flow content and preserves per-variant ViewThatFits branches. Agents can supply reference canvas dimensions and top inset. Added repeatable native PNG preview rendering. Android blur and detailed shadows apply on Android 12+; older systems retain native shadow fallback.
+
 ## 1.2.0-beta.5 — 2026-09-12
 
 新增 Agent 导入状态与颜色参数，可根据实际运行界面选择分支、还原简单插值和主题颜色。 / Added agent-supplied import state and color parameters for branch selection, simple interpolation and verified theme colors.

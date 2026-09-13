@@ -4,7 +4,9 @@ import AppKit
 public struct SwiftImportOptions:Codable,Sendable {
     public var values:[String:String]
     public var colors:[String:String]
-    public init(values:[String:String]=[:],colors:[String:String]=[:]){self.values=values;self.colors=colors}
+    public var canvas:Dimensions?
+    public var topInset:Double?
+    public init(values:[String:String]=[:],colors:[String:String]=[:],canvas:Dimensions?=nil,topInset:Double?=nil){self.values=values;self.colors=colors;self.canvas=canvas;self.topInset=topInset}
 }
 public struct UnmatchedComponent:Codable,Sendable {public var typeName:String;public var sourceReference:String}
 public struct ImportClassification:Codable,Sendable {public var sourceType:String;public var componentKind:String;public var count:Int}
@@ -15,8 +17,9 @@ public struct ImportReport:Codable,Sendable {
     public var unmatched:[UnmatchedComponent]=[]
     public var classifications:[ImportClassification]=[]
     public var templates:[ComponentTemplate]=[]
+    public var device:DeviceProfile?
     public func project(named name:String)->DesignProject {
-        var project=DesignProject();project.name=name;project.pages=pages;project.templates=templates;project.importNotes=warnings
+        var project=DesignProject();project.name=name;project.pages=pages;project.templates=templates;project.importNotes=warnings;project.device=device ?? DeviceProfile()
         return SharedTabBar.normalized(project)
     }
 }
@@ -38,6 +41,8 @@ public enum SwiftImporter {
     public static func inspect(_ url:URL,options:SwiftImportOptions=SwiftImportOptions())throws->ImportReport {
         guard options.values.count+options.colors.count<=300,options.values.allSatisfy({$0.key.count<512 && $0.value.count<8000}),options.colors.keys.allSatisfy({$0.count<512}) else{throw StudioError.invalid("导入参数过多或过长")}
         for color in options.colors.values{try ProjectStore.validateColor(color)}
+        if let canvas=options.canvas {guard [canvas.width,canvas.height].allSatisfy({$0.isFinite && (200...3000).contains($0)}) else{throw StudioError.invalid("导入画布尺寸无效")}}
+        if let inset=options.topInset {guard inset.isFinite,(0...200).contains(inset) else{throw StudioError.invalid("顶部安全区无效")}}
         var isDir:ObjCBool=false;guard FileManager.default.fileExists(atPath:url.path,isDirectory:&isDir) else{throw StudioError.invalid("导入路径不存在")}
         let root=isDir.boolValue ? url:url.deletingLastPathComponent()
         let inventory=try SourceInspector.inventory(root)

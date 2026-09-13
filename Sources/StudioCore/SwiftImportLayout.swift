@@ -7,6 +7,8 @@ struct SwiftImportStyle {
     var foreground="222222"
     var accent="007AFF"
     var alignment="leading"
+    var lineSpacing:Double=0
+    var lineLimit:Int?
 }
 struct SwiftImportBox {
     var width:Double
@@ -52,9 +54,10 @@ final class SwiftImportLayout {
     func color(_ tokens:[SwiftToken]?,depth:Int=0)->String? {
         guard let tokens,depth<12 else{return nil}
         let t=resolved(tokens),key=SwiftSourceSyntax.text(t)
-        if let i=t.indices.first(where:{t[$0].text=="opacity"}),i>0,i+1<t.count {
+        if let i=t.indices.last(where:{t[$0].text=="opacity"}),i>0,i+1<t.count {
             let base=Array(t.prefix(i-1)),args=arguments(Array(t.dropFirst(i)))
-            if let rgb=color(base,depth:depth+1),let opacity=number(args["$0"]){return String(rgb.prefix(6))+String(format:"%02X",Int(max(0,min(1,opacity))*255))}
+            if let rgb=color(base,depth:depth+1),let opacity=number(args["$0"]){return String(rgb.prefix(6))+String(format:"%02X",Int(max(0,min(1,opacity))*Double(rgb.count==8 ? (Int(rgb.suffix(2),radix:16) ?? 255):255)))}
+            return nil
         }
         let named=["clear":"FFFFFF00","white":"FFFFFF","black":"000000","red":"FF3B30","orange":"FF9500","yellow":"FFCC00","green":"34C759","blue":"007AFF","purple":"AF52DE","pink":"FF2D55","gray":"8E8E93","primary":"222222","secondary":"777777","label":"222222","secondaryLabel":"777777","systemBackground":"FFFFFF","secondarySystemBackground":"F2F2F7"]
         if key.hasPrefix("Color(") || key.hasPrefix("AnyShapeStyle(") {
@@ -80,23 +83,23 @@ final class SwiftImportLayout {
         var n=DesignNode(kind:kind,frame:Rect(0,0,max(1,width),max(1,height)))
         n.id=element.id;n.name=kind.title+" · "+element.type;n.sourceReference=element.reference+" · "+element.type
         n.fontSize=style.font;n.fontWeight=style.weight;n.foreground=style.foreground;n.accent=style.accent
-        n.textAlignment=style.alignment;n.padding=0;n.cornerRadius=0;n.fill="FFFFFF00";n.fixedToViewport=false
+        n.textAlignment=style.alignment;n.padding=0;n.cornerRadius=0;n.fill="FFFFFF00";n.fixedToViewport=element.pinned;n.backgroundLayer=element.pinned
         return n
     }
-    func layout(_ e:SwiftImportElement,width:Double,style:SwiftImportStyle=SwiftImportStyle())->SwiftImportBox {
+    func layout(_ e:SwiftImportElement,width:Double,height:Double?=nil,style:SwiftImportStyle=SwiftImportStyle())->SwiftImportBox {
         let width=max(1,min(3000,width)),args=e.args
         var style=style
         if e.type.hasPrefix(".") {
             guard let child=e.children.first else{return SwiftImportBox(width:0,height:0)}
             switch e.type {
-            case ".font":font(args["$0"] ?? [],&style);return layout(child,width:width,style:style)
-            case ".fontWeight":style.weight=SwiftSourceSyntax.text(args["$0"] ?? []).replacingOccurrences(of:".",with:"");return layout(child,width:width,style:style)
-            case ".bold":style.weight="bold";return layout(child,width:width,style:style)
+            case ".font":font(args["$0"] ?? [],&style);return layout(child,width:width,height:height,style:style)
+            case ".fontWeight":style.weight=SwiftSourceSyntax.text(args["$0"] ?? []).replacingOccurrences(of:".",with:"");return layout(child,width:width,height:height,style:style)
+            case ".bold":style.weight="bold";return layout(child,width:width,height:height,style:style)
             case ".foregroundStyle",".foregroundColor",".tint":
                 if let c=color(args["$0"]) {if e.type==".tint"{style.accent=c}else{style.foreground=c}}
                 else{builder.warn("动态颜色未确定，保留可编辑默认色",e.reference)}
-                return layout(child,width:width,style:style)
-            case ".multilineTextAlignment":style.alignment=SwiftSourceSyntax.text(args["$0"] ?? []).replacingOccurrences(of:".",with:"");return layout(child,width:width,style:style)
+                return layout(child,width:width,height:height,style:style)
+            case ".multilineTextAlignment":style.alignment=SwiftSourceSyntax.text(args["$0"] ?? []).replacingOccurrences(of:".",with:"");return layout(child,width:width,height:height,style:style)
             case ".padding":
                 let first=SwiftSourceSyntax.text(args["$0"] ?? []),amount=max(0,min(500,number(args["$1"]) ?? number(args["$0"]) ?? 16))
                 let all=first.isEmpty || number(args["$0"]) != nil || first==".all"
@@ -104,47 +107,53 @@ final class SwiftImportLayout {
                 let right=all || first.contains("horizontal") || first.contains("trailing") ? amount:0
                 let top=all || first.contains("vertical") || first.contains("top") ? amount:0
                 let bottom=all || first.contains("vertical") || first.contains("bottom") ? amount:0
-                var box=layout(child,width:max(1,width-left-right),style:style);box.move(left,top);box.width+=left+right;box.height+=top+bottom;return box
+                var box=layout(child,width:max(1,width-left-right),height:height.map{max(1,$0-top-bottom)},style:style);box.move(left,top);box.width+=left+right;box.height+=top+bottom;return box
             case ".frame":
                 let fixedW=number(args["width"]),fixedH=number(args["height"])
-                var box=layout(child,width:fixedW ?? width,style:style)
+                var box=layout(child,width:fixedW ?? width,height:fixedH ?? height,style:style)
                 let w=max(number(args["minWidth"]) ?? 0,fixedW ?? (SwiftSourceSyntax.text(args["maxWidth"] ?? []).contains("infinity") ? width:box.width))
                 let h=max(number(args["minHeight"]) ?? 0,fixedH ?? box.height)
                 let a=SwiftSourceSyntax.text(args["alignment"] ?? [])
                 box.move(a.contains("leading") || a.contains("Leading") ? 0 : a.contains("trailing") || a.contains("Trailing") ? w-box.width:(w-box.width)/2,a.contains("top") ? 0:a.contains("bottom") ? h-box.height:(h-box.height)/2)
                 box.width=w;box.height=h;return box
             case ".offset",".position":
-                var box=layout(child,width:width,style:style)
-                box.move((number(args["x"]) ?? 0)-(e.type==".position" ? box.width/2:0),(number(args["y"]) ?? 0)-(e.type==".position" ? box.height/2:0));return box
+                var box=layout(child,width:width,height:height,style:style)
+                let sizeArgs=arguments(args["$0"] ?? [])
+                box.move((number(args["x"]) ?? number(sizeArgs["width"]) ?? 0)-(e.type==".position" ? box.width/2:0),(number(args["y"]) ?? number(sizeArgs["height"]) ?? 0)-(e.type==".position" ? box.height/2:0));return box
             case ".background",".overlay":
-                var box=layout(child,width:width,style:style)
+                var box=layout(child,width:width,height:height,style:style)
                 var decoration:[DesignNode]=[]
                 if let value=args["$0"] {
-                    let c=color(value)
-                    if c==nil{builder.warn("背景样式未确定，使用可编辑占位背景",e.reference)}
-                    var background=node(e,kind:.rectangle,style:style,width:box.width,height:box.height);background.fill=c ?? "F2F2F7";background.name="背景";decoration=[background]
+                    var background=node(e,kind:.rectangle,style:style,width:box.width,height:box.height)
+                    paint(value,on:&background,reference:e.reference);background.name="背景";decoration=[background]
                 }
                 for element in e.children.dropFirst() {
-                    var drawn=layout(element,width:max(1,box.width),style:style)
+                    var drawn=layout(element,width:max(1,box.width),height:box.height,style:style)
                     if drawn.nodes.count==1,let n=drawn.nodes.first,[.rectangle,.circle].contains(n.kind) {drawn.nodes[0].frames[Variant.standardPortrait.rawValue]=Rect(0,0,max(1,box.width),max(1,box.height))}
                     decoration+=drawn.nodes
                 }
                 box.nodes=e.type==".background" ? decoration+box.nodes:box.nodes+decoration;return box
             case ".clipShape",".cornerRadius":
-                var box=layout(child,width:width,style:style)
+                var box=layout(child,width:width,height:height,style:style)
                 let shape=args["$0"] ?? [],radius=number(args["$0"]) ?? number(arguments(shape)["cornerRadius"]) ?? (SwiftSourceSyntax.text(shape).contains("Circle") || SwiftSourceSyntax.text(shape).contains("Capsule") ? min(box.width,box.height)/2:0)
-                for i in box.nodes.indices where [.rectangle,.circle,.image,.avatar,.button].contains(box.nodes[i].kind) {box.nodes[i].cornerRadius=max(0,min(500,radius))};return box
+                for i in box.nodes.indices where [.rectangle,.circle,.image,.avatar,.button].contains(box.nodes[i].kind) && abs(rect(box.nodes[i]).width-box.width)<1 && abs(rect(box.nodes[i]).height-box.height)<1 && abs(rect(box.nodes[i]).x)<1 && abs(rect(box.nodes[i]).y)<1 {box.nodes[i].cornerRadius=max(0,min(500,radius))};return box
             case ".fill",".stroke",".strokeBorder":
-                var box=layout(child,width:width,style:style)
+                var box=layout(child,width:width,height:height,style:style)
                 let c=color(args["$0"]) ?? (args["$0"]==nil ? style.foreground:"F2F2F7")
-                if args["$0"] != nil && color(args["$0"])==nil{builder.warn("动态填充色未确定，使用中性占位色",e.reference)}
+                if args["$0"] != nil && color(args["$0"])==nil && gradient(args["$0"])==nil{builder.warn("动态填充色未确定，使用中性占位色",e.reference)}
                 for i in box.nodes.indices {
-                    if e.type==".fill" {box.nodes[i].fill=c}else{box.nodes[i].fill="FFFFFF00";box.nodes[i].borderColor=c;box.nodes[i].borderWidth=max(0,min(100,number(args["lineWidth"]) ?? 1))}
+                    if e.type==".fill" {paint(args["$0"],on:&box.nodes[i],reference:e.reference)}else{box.nodes[i].fill="FFFFFF00";box.nodes[i].borderColor=c;box.nodes[i].borderWidth=max(0,min(100,number(args["lineWidth"]) ?? 1))}
                 };return box
-            case ".opacity":var box=layout(child,width:width,style:style);for i in box.nodes.indices{box.nodes[i].opacity*=max(0,min(1,number(args["$0"]) ?? 1))};return box
-            case ".shadow":var box=layout(child,width:width,style:style);if !box.nodes.isEmpty{box.nodes[0].shadow=max(0,min(100,number(args["radius"]) ?? 0))};return box
+            case ".opacity":var box=layout(child,width:width,height:height,style:style);for i in box.nodes.indices{box.nodes[i].opacity*=max(0,min(1,number(args["$0"]) ?? 1))};return box
+            case ".shadow":
+                var box=layout(child,width:width,height:height,style:style)
+                if !box.nodes.isEmpty{box.nodes[0].shadow=max(0,min(100,number(args["radius"]) ?? 0));box.nodes[0].shadowColor=color(args["color"]);box.nodes[0].shadowX=number(args["x"]) ?? 0;box.nodes[0].shadowY=number(args["y"]) ?? 0};return box
+            case ".blur":var box=layout(child,width:width,height:height,style:style);for i in box.nodes.indices{box.nodes[i].blurRadius=max(0,min(500,number(args["radius"]) ?? 0))};return box
+            case ".lineSpacing":style.lineSpacing=max(0,number(args["$0"]) ?? 0);return layout(child,width:width,height:height,style:style)
+            case ".lineLimit":style.lineLimit=number(args["$0"]).map{max(1,Int($0))};return layout(child,width:width,height:height,style:style)
+            case ".fixedSize", ".layoutPriority":return layout(child,width:width,height:height,style:style)
             case ".buttonStyle":
-                var box=layout(child,width:width,style:style)
+                var box=layout(child,width:width,height:height,style:style)
                 let key=SwiftSourceSyntax.text(args["$0"] ?? [])
                 if key.contains("bordered") {
                     for i in box.nodes.indices where box.nodes[i].kind == .button {
@@ -154,44 +163,64 @@ final class SwiftImportLayout {
                     }
                 }else if key != ".plain" && key != ".automatic"{builder.warn("按钮样式需要对照原界面调整",e.reference)}
                 return box
-            default:return layout(child,width:width,style:style)
+            default:return layout(child,width:width,height:height,style:style)
             }
         }
         if e.type=="FlowLayout" {
             let spacing=number(args["spacing"]) ?? 8,rowSpacing=number(args["rowSpacing"]) ?? spacing
             var x=0.0,y=0.0,rowHeight=0.0,nodes:[DesignNode]=[]
-            for child in e.children {
-                var box=layout(child,width:width,style:style)
+            for entry in children(e.children) {
+                var box=layout(entry.0,width:width,style:style)
+                if !entry.1.isEmpty{for i in box.nodes.indices{box.nodes[i].groupID=entry.1}}
                 if x>0 && x+box.width>width {x=0;y+=rowHeight+rowSpacing;rowHeight=0}
                 box.move(x,y);nodes+=box.nodes;x+=box.width+spacing;rowHeight=max(rowHeight,box.height)
             }
             return SwiftImportBox(width:width,height:y+rowHeight,nodes:nodes)
         }
-        let vertical:Set<String>=["VStack","LazyVStack","ScrollView","ScrollViewReader","List","Form","Section","NavigationStack","NavigationView","GeometryReader","Group","ViewThatFits"]
+        if e.type=="ViewThatFits" {
+            let selected=e.children.first{idealWidth($0,style:style)<=width} ?? e.children.last
+            return selected.map{layout($0,width:width,height:height,style:style)} ?? SwiftImportBox(width:0,height:0)
+        }
+        let vertical:Set<String>=["VStack","LazyVStack","ScrollView","ScrollViewReader","List","Form","Section","NavigationStack","NavigationView","GeometryReader","Group"]
         if vertical.contains(e.type) || ["HStack","LazyHStack","ZStack"].contains(e.type) {
             let horizontal=["HStack","LazyHStack"].contains(e.type),overlay=e.type=="ZStack"
-            let spacing=max(0,min(500,number(args["spacing"]) ?? (["Group","NavigationStack","NavigationView","ScrollView","GeometryReader","ZStack","ViewThatFits"].contains(e.type) ? 0:8)))
-            let offered=horizontal ? max(1,(width-spacing*Double(max(0,e.children.count-1)))/Double(max(1,e.children.count))):width
-            var boxes=e.children.map{layout($0,width:offered,style:style)}
+            let transparent=["Group","NavigationStack","NavigationView","ScrollViewReader","GeometryReader"].contains(e.type)
+            let entries=children(e.children)
+            let spacing=max(0,min(500,number(args["spacing"]) ?? (transparent || e.type=="ScrollView" || overlay ? 0:8)))
+            let gaps=spacing*Double(max(0,entries.count-1))
+            var boxes=entries.map{layout($0.0,width:width,height:(transparent || overlay) ? height:nil,style:style)}
             if horizontal {
-                let used=boxes.reduce(0){$0+$1.width}+spacing*Double(max(0,boxes.count-1))
-                let spacers=e.children.indices.filter{e.children[$0].type=="Spacer"}
-                if !spacers.isEmpty,used<width {for i in spacers{boxes[i].width+=(width-used)/Double(spacers.count)}}
+                let flexible=entries.indices.filter{expands(entries[$0].0)}
+                let fixed=boxes.indices.filter{!flexible.contains($0)}.reduce(0.0){$0+boxes[$1].width}
+                if !flexible.isEmpty {
+                    let offered=max(1,(width-gaps-fixed)/Double(flexible.count))
+                    for i in flexible {boxes[i]=entries[i].0.type=="Spacer" ? SwiftImportBox(width:offered,height:0):layout(entries[i].0,width:offered,style:style)}
+                }else if boxes.reduce(0,{$0+$1.width})+gaps>width {
+                    let share=max(1,(width-gaps)/Double(max(1,entries.count)))
+                    let soft=entries.indices.filter{fixedWidth(entries[$0].0)==nil && idealWidth(entries[$0].0,style:style)>share}
+                    let hard=boxes.indices.filter{!soft.contains($0)}.reduce(0.0){$0+boxes[$1].width}
+                    let offered=max(1,(width-gaps-hard)/Double(max(1,soft.count)))
+                    for i in soft{boxes[i]=layout(entries[i].0,width:offered,style:style)}
+                }
             }
-            let w=horizontal ? boxes.reduce(0){$0+$1.width}+spacing*Double(max(0,boxes.count-1)):(boxes.map(\.width).max() ?? 0)
-            let h=horizontal || overlay ? boxes.map(\.height).max() ?? 0:boxes.reduce(0){$0+$1.height}+spacing*Double(max(0,boxes.count-1))
+            let w=horizontal ? boxes.reduce(0){$0+$1.width}+gaps:(overlay ? width:boxes.map(\.width).max() ?? 0)
+            let naturalH=horizontal || overlay ? boxes.map(\.height).max() ?? 0:boxes.reduce(0){$0+$1.height}+gaps
+            let h=overlay ? (height ?? naturalH):e.type=="ScrollView" ? (height ?? naturalH):naturalH
+            if overlay {boxes=entries.map{layout($0.0,width:w,height:h,style:style)}}
             let align=SwiftSourceSyntax.text(args["alignment"] ?? []);var cursor=0.0,nodes:[DesignNode]=[]
-            for var box in boxes {
-                let x=horizontal ? cursor:(align.contains("leading") || align.contains("Leading") ? 0:align.contains("trailing") || align.contains("Trailing") ? w-box.width:(w-box.width)/2)
-                let y=horizontal ? (align.contains("top") ? 0:align.contains("bottom") ? h-box.height:(h-box.height)/2):overlay ? 0:cursor
-                if overlay,box.nodes.count==1,let n=box.nodes.first,n.kind == .rectangle {box.nodes[0].frames[Variant.standardPortrait.rawValue]=Rect(0,0,max(1,w),max(1,h))}
-                box.move(x,y);nodes+=box.nodes;cursor+=(horizontal ? box.width:box.height)+spacing
+            for (i,measured) in boxes.enumerated() {
+                var box=measured
+                let x=horizontal ? cursor:(align.contains("leading") || align.contains("Leading") || transparent ? 0:align.contains("trailing") || align.contains("Trailing") ? w-box.width:(w-box.width)/2)
+                let y=horizontal || overlay ? (align.contains("top") || align.contains("Top") ? 0:align.contains("bottom") || align.contains("Bottom") ? h-box.height:(h-box.height)/2):cursor
+                box.move(x,y)
+                if !entries[i].1.isEmpty {for j in box.nodes.indices{box.nodes[j].groupID=entries[i].1}}
+                nodes+=box.nodes;cursor+=(horizontal ? box.width:box.height)+spacing
             }
             if !e.group.isEmpty {for i in nodes.indices{nodes[i].groupID=e.group}}
             return SwiftImportBox(width:w,height:h,nodes:nodes)
         }
         if e.type=="Spacer" {return SwiftImportBox(width:max(0,number(args["minLength"]) ?? 0),height:max(0,number(args["minLength"]) ?? 0))}
-        let title=text(args["$0"] ?? args["title"],reference:e.reference)
+        let title=["Color","Rectangle","RoundedRectangle","Circle","Capsule","LinearGradient","RadialGradient"].contains(e.type) ? "":text(args["$0"] ?? args["title"],reference:e.reference)
         var kind=SwiftImporter.mappings[e.type] ?? .rectangle
         if e.type=="Image",args["systemName"] != nil {kind = .icon}
         if e.type=="ProgressView",args["value"]==nil {kind = .loading}
@@ -203,11 +232,13 @@ final class SwiftImportLayout {
             let natural=(title as NSString).size(withAttributes:attributes)
             w=max(1,min(width,ceil(natural.width)))
             h=max(style.font*1.25,ceil((title as NSString).boundingRect(with:CGSize(width:w,height:10000),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes).height))
+            let lines=max(1,ceil(h/(style.font*1.25)));h += max(0,lines-1)*style.lineSpacing
+            if let limit=style.lineLimit{h=min(h,Double(limit)*(style.font*1.25+style.lineSpacing))}
         }else if kind == .button {w=min(width,max(24,(title as NSString).size(withAttributes:[.font:NSFont.systemFont(ofSize:style.font)]).width+16));h=max(30,style.font*1.4)}
         else if kind == .icon {w=max(1,style.font);h=w}
         else if kind == .divider {h=1}
-        else if kind == .circle {w=min(width,60);h=w}
-        else if kind == .rectangle {h=60}
+        else if kind == .circle {w=height.map{min(width,$0)} ?? min(width,60);h=w}
+        else if kind == .rectangle {w=width;h=height ?? 60}
         else if kind == .image {h=160}
         else if kind == .custom {h=54}
         var n=node(e,kind:kind,style:style,width:w,height:h);n.text=title
@@ -221,7 +252,11 @@ final class SwiftImportLayout {
                 else {n.fill=color(args["$0"]) ?? "F7F7F7";if color(args["$0"])==nil{builder.warn("动态背景色未确定，使用中性占位色",e.reference)}}
             }else{n.fill=style.foreground}
             n.cornerRadius=number(args["cornerRadius"]) ?? (kind == .circle || e.type=="Capsule" ? min(w,h)/2:0)
-            if e.type.contains("Gradient") {n.fill=color(args["colors"].flatMap{SwiftSourceSyntax.split(Array($0.dropFirst().dropLast())).first}) ?? "F7F7F7"}
+            if e.type.contains("Gradient") {
+                var source=SwiftSourceSyntax.tokens(e.type+"(")
+                for (i,key) in args.keys.sorted().enumerated(){if i>0{source+=SwiftSourceSyntax.tokens(",")};source+=SwiftSourceSyntax.tokens(key+":");source+=args[key]!};source+=SwiftSourceSyntax.tokens(")")
+                paint(source,on:&n,reference:e.reference)
+            }
         }
         if kind == .custom {n.name="未匹配 · "+title;n.text="待还原："+title;n.customCode="Text(\(SwiftExporter.literal(n.text)))";n.borderWidth=1;n.borderColor="D8C99B";n.fill="FFF8E5"}
         if kind == .image {

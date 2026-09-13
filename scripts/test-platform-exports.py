@@ -27,6 +27,9 @@ for node in design['pages'][-1]['nodes']:
  if node['kind']=='profileRow':node['showQRCode']=False;node['showChevron']=False
  if node['kind']=='progress':node['progressStyle']='steps';node['progressCurrent']=25;node['progressTotal']=80;node['progressLabel']='fraction';node['frames']['standardPortrait']['height']=44
  if node['kind']=='ringProgress':node['progressLabel']='percent'
+ if node['kind'] in ['rectangle','circle']:
+  node['gradient']={'kind':'radial' if node['kind']=='circle' else 'linear','stops':[{'color':'FF000080','location':0},{'color':'3366FFFF','location':1}],'startX':0.5,'startY':0.5 if node['kind']=='circle' else 0,'endX':1,'endY':1,'startRadius':0,'endRadius':80}
+  node['blurRadius']=3;node['shadowColor']='3366AA55';node['shadowX']=2;node['shadowY']=4;node['shadow']=6
  if node['kind']=='tabBar':
   node['items'][0]['iconData']=png;node['items'][0]['selectedIconData']=png
 design=tool('replace_project',{'project':design,'expectedRevision':design['revision']})

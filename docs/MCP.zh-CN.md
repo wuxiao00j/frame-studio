@@ -142,3 +142,7 @@ python3 scripts/mcp-smoke.py "/Applications/原境 Frame Studio.app/Contents/Mac
 Agent 应先核对真实入口、目标主题和运行状态，再逐项处理未解析的动态值与布局；不要把“未匹配为零”描述为完整还原。
 
 Agent 可以向 `inspect_ui_project` / `inspect_swift_project`（以及对应 import 工具）传入 `values` 和 `colors`：键为源码表达式，值分别是 Swift 字面量字符串与 HEX 颜色。例如 `values: {"session.isLoggedIn": "false", "items": "[]"}`、`colors: {"Theme.tint": "875F64"}`。这些参数只用于非执行解析；必须来自用户指定的运行状态或可核对的源码，不能填入猜测的业务数据。导入器可以据此选择条件分支、填入简单字符串插值和主题颜色。
+
+Beta.6 的检查/导入工具还支持 `canvas: {"width": 402, "height": 874}` 和 `topInset: 62`，用于按已知参考画布计算布局；这些值应来自目标设备或原界面。报告的 `device` 应随 `pages`、`templates` 一起写入设计。节点支持 `gradient`、`blurRadius`、`shadowColor`、`shadowX`、`shadowY`、`backgroundLayer` 和 `visibleVariants`。渐变由 `kind`（linear/radial）、`stops`（color/location）、startX/startY/endX/endY 和 startRadius/endRadius 描述。使用 `list_components` 和当前项目检查字段。
+
+原生静态预览可执行 `FrameStudio --render-preview --project FILE --output preview.png --page 0 --variant standardPortrait --offset 0`。命令只渲染指定设计，不启动原项目或生成手机安装包。页面编号从 0 开始，offset 为滚动内容偏移。

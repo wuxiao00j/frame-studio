@@ -5,8 +5,9 @@ public struct CornerRadii:Codable,Equatable,Sendable {
     public init(_ radius:Double){tl=radius;tr=radius;bl=radius;br=radius}
 }
 public extension DesignNode {
-    static let optionalFieldKeys:Set<String> = ["flutterCode","composeCode","showIcon","showLabel","showQRCode","showChevron","controlPosition","navigationAction","syncTabIcons","iconData","qrIconData","chevronIconData","trailingSymbol","trailingIconData","progressStyle","progressLabel","progressCurrent","progressTotal","progressThickness","progressSteps","trackColor","numberValue","minimumValue","maximumValue","stepValue","dateValue","fixedToViewport","rowGroupID"]
+    static let optionalFieldKeys:Set<String> = ["visibleVariants","backgroundLayer","gradient","blurRadius","shadowColor","shadowX","shadowY","flutterCode","composeCode","showIcon","showLabel","showQRCode","showChevron","controlPosition","navigationAction","syncTabIcons","iconData","qrIconData","chevronIconData","trailingSymbol","trailingIconData","progressStyle","progressLabel","progressCurrent","progressTotal","progressThickness","progressSteps","trackColor","numberValue","minimumValue","maximumValue","stepValue","dateValue","fixedToViewport","rowGroupID"]
     var isFixed:Bool {fixedToViewport ?? [.navigationBar,.tabBar].contains(kind)}
+    func isVisible(in variant:Variant)->Bool {!hidden && (visibleVariants?.contains(variant.rawValue) ?? true)}
     var hasIcon:Bool {showIcon ?? ![.toggle,.checkbox,.radio,.switchControl,.text,.textField,.textButton,.outlinedButton,.textArea,.selectField].contains(kind)}
     var hasLabel:Bool {showLabel ?? (kind != .switchControl)}
     var hasQRCode:Bool {showQRCode ?? true}
@@ -31,7 +32,7 @@ public extension DesignPage {
     func contentHeight(_ variant:Variant,device:DeviceProfile)->Double {
         let viewport=device.size(variant)
         guard isScrollable else{return viewport.height}
-        let end=nodes.filter{!$0.hidden && !$0.isFixed}.map{n in let r=n.frame(variant,device:device);return r.y+r.height}.max() ?? 0
+        let end=nodes.filter{$0.isVisible(in:variant) && !$0.isFixed}.map{n in let r=n.frame(variant,device:device);return r.y+r.height}.max() ?? 0
         let footer=nodes.filter{!$0.hidden && $0.isFixed && $0.kind == .tabBar}.map{max(0,viewport.height-$0.frame(variant,device:device).y)}.max() ?? 8
         return max(viewport.height,contentHeights?[variant.rawValue] ?? 0,end+footer+16)
     }

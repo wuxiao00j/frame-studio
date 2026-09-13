@@ -1,7 +1,7 @@
 import SwiftUI
 import StudioCore
 
-@main @MainActor struct FrameStudioApp:App {
+@MainActor struct FrameStudioApp:App {
     @State private var session=EditorSession()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     var body:some Scene {

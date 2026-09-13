@@ -74,8 +74,8 @@ import StudioCore
         case .dateField:DatePicker(node.text,selection:interactive ? $date:.constant(Self.date(node.dateValue)),displayedComponents:.date).padding(.horizontal,node.padding)
         case .rating:HStack(spacing:node.spacing){ForEach(1...max(1,Int(node.maximum)),id:\.self){i in Button{if interactive{number=Double(i)}}label:{Image(systemName:Double(i)<=(interactive ? number:node.number) ? "star.fill":"star").font(.system(size:node.iconSize)).foregroundStyle(Color(hex:node.accent))}.buttonStyle(.plain)}}.frame(maxWidth:.infinity,maxHeight:.infinity)
         case .loading:ProgressView().controlSize(.small).frame(maxWidth:.infinity,maxHeight:.infinity)
-        case .rectangle:Color(hex:node.fill)
-        case .circle:Circle().fill(Color(hex:node.fill))
+        case .rectangle:Rectangle().fill(node.paintStyle)
+        case .circle:Circle().fill(node.paintStyle)
         case .spacer:Color.clear
         case .statistic:VStack(alignment:.leading,spacing:8){HStack{if node.hasIcon{glyph};Text(node.text).font(.system(size:13))};Text(node.subtitle).font(.system(size:node.fontSize,weight:.semibold))}.padding(node.padding).frame(maxWidth:.infinity,alignment:.leading)
         case .alertBanner:HStack(spacing:node.spacing){if node.hasIcon{glyph};VStack(alignment:.leading,spacing:4){Text(node.text).fontWeight(.medium);Text(node.subtitle).font(.system(size:max(10,node.fontSize-3))).opacity(0.6)}}.padding(.horizontal,node.padding)
