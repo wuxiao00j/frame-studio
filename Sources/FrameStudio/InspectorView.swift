@@ -4,7 +4,7 @@ import StudioCore
 @MainActor struct InspectorView:View {
     @Bindable var session:EditorSession
     var body:some View {
-        VStack(spacing:0){HStack{Text("设计属性").font(.system(size:12,weight:.semibold));Spacer();Text(session.selection.isEmpty ? "页面" : "\(session.selection.count) 个选中").font(.system(size:10)).foregroundStyle(studioMuted)}.padding(20);Divider();ScrollView{VStack(alignment:.leading,spacing:20){if let node=session.selected{NodeInspector(session:session,node:node)}else{PageInspector(session:session)}}.padding(18)}}.frame(width:276).background(.white)
+        VStack(spacing:0){HStack{Text("设计属性").font(.system(size:12,weight:.semibold));Spacer();Text(session.selection.isEmpty ? "页面" : "\(session.selection.count) 个选中").font(.system(size:10)).foregroundStyle(studioMuted)}.padding(20);Divider();ScrollView{VStack(alignment:.leading,spacing:20){if let group=session.selectionGroup(in:session.variant){GroupInspector(session:session,group:group)}else if let node=session.selected{NodeInspector(session:session,node:node)}else{PageInspector(session:session)}}.padding(18)}}.frame(width:276).background(.white)
     }
 }
 @MainActor struct InspectorSection<Content:View>:View {
@@ -54,8 +54,8 @@ import StudioCore
         InspectorSection(title:node.kind.title){TextField("图层名称",text:binding(\.name)).textFieldStyle(.roundedBorder)}
         InspectorSection(title:"组合与拆分") {
             HStack {
-                Button("组合选中",action:session.group).disabled(session.selection.count<2)
-                Button("解除组合",action:session.ungroup).disabled(!session.page.nodes.contains{session.selection.contains($0.id) && !$0.groupID.isEmpty})
+                Button("合并组件",action:session.group).disabled(session.selection.count<2)
+                Button("拆分组合",action:session.ungroup).disabled(!session.page.nodes.contains{session.selection.contains($0.id) && !$0.groupID.isEmpty})
             }
             if node.kind.decomposable {Button("拆分为基础组件"){session.decompose(node.id)}}
             Text("Shift 点击多选 · ⌘G 组合 · ⇧⌘G 解组\n拆分后可直接逐项编辑，再多选重新组合。").foregroundStyle(studioMuted)
@@ -103,7 +103,8 @@ import StudioCore
         }
         if node.kind == .custom {InspectorSection(title:"SwiftUI 视图表达式") {TextEditor(text:binding(\.customCode)).font(.system(size:10,design:.monospaced)).frame(height:130).border(studioLine);Text("Flutter Widget 表达式").font(.caption);TextEditor(text:Binding(get:{node.flutterCode ?? ""},set:{v in session.updateNode(node.id){$0.flutterCode=v}})).font(.system(size:10,design:.monospaced)).frame(height:90).border(studioLine);Text("Android Compose 内容").font(.caption);TextEditor(text:Binding(get:{node.composeCode ?? ""},set:{v in session.updateNode(node.id){$0.composeCode=v}})).font(.system(size:10,design:.monospaced)).frame(height:90).border(studioLine);Text("仅输入 View 表达式。编辑器不执行代码，导出后由 Xcode 编译。").font(.system(size:9)).foregroundStyle(studioMuted)}}
         InspectorSection(title:"图层操作"){
-            HStack{Button("置顶"){session.reorder(front:true)};Button("置底"){session.reorder(front:false)};Button("复制",action:session.duplicate)}
+            LayerOrderControls(session:session)
+            Button("复制",action:session.duplicate)
             Button("创建组合组件…",action:session.saveTemplate)
             HStack{Toggle("锁定",isOn:binding(\.locked));Toggle("隐藏",isOn:binding(\.hidden))}
             Button("删除选中组件",role:.destructive,action:session.deleteSelection)

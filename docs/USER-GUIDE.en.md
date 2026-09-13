@@ -91,6 +91,11 @@ This update improves component reuse with seven generic bundled composites: mobi
 
 The library groups bundled, personal and project templates by category and searches names and categories. When saving a composite, enter a category and optionally save it to the personal library for reuse in other projects. Existing project templates can be copied to the personal library or recategorized through their context menu. Saving the same template again updates its personal copy.
 
-The local personal library retains all six layouts, icons, gradients, masks and form attributes. Insertion creates independent layers and clears links to pages absent from the destination project. Library writes use revision checks and atomic saves. MCP retains 27 tools with added category and bundled-template metadata. Legacy templates without a category display a suggested category. Exports remain UI source only.
+The local personal library retains all six layouts, icons, gradients, masks and form attributes. Insertion creates independent layers and clears links to pages absent from the destination project. Library writes use revision checks and atomic saves. MCP provides 28 tools with added category and bundled-template metadata. Legacy templates without a category display a suggested category. Exports remain UI source only.
 
 `~/Library/Application Support/FrameStudio/PersonalComponents.framestudio`
+
+
+Layer controls now include Bring Forward / Send Backward for single or multiple selections, preserving selected-layer order and supporting undo. Boundary actions are disabled. Pinned backgrounds, scrolling content and pinned foregrounds remain in their own drawing planes. Shortcuts are Command-] / Command-[.
+
+Merge Components (Command-G) shows one outer selection frame and one lower-right resize handle. Move the group or resize its layout bounds; Shift preserves the aspect ratio. The inspector offers group coordinates, dimensions and alignment. Select members in the layer list to edit text, icons and colors, or Split Group (Shift-Command-G) to edit independently. A group with locked members cannot be transformed as a whole. Copying or saving a complete group retains members from other layout variants.

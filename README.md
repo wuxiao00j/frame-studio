@@ -21,10 +21,11 @@
 - 保留导入容器的嵌套裁剪；文字行数、行间距与最小字号比例可调，图片支持填满 / 适应 / 拉伸，新增磨砂材质。
 - 返回键默认左上角；预置组合拆分后自动解组，多选可重新组合、解组或保存复用。
 - SwiftUI、Jetpack Compose、Flutter **UI 源码导出**。
+- 上一层 / 下一层；合并后使用单个外框，支持整体拖动、尺寸调整、拆分与成员编辑。
 - 7 个内置组合样式，按分类搜索的组件库，以及跨项目复用的本机个人组件库。
 - 枚举选项与初始状态解析、分组表单、顶部工具栏、手机表单行样式和默认选项。
 - SwiftUI 按 View 结构导入、展开复用组件；动态内容与未匹配视图分别说明，保存为独立草稿。
-- 27 个本地 MCP 工具，供 Agent 读取和修改设计、导入图标与导出源码。
+- 28 个本地 MCP 工具，供 Agent 读取和修改设计、导入图标与导出源码。
 
 ### 开始使用
 
@@ -54,10 +55,11 @@ Frame Studio is a native SwiftUI macOS application for composing mobile UI scree
 - Retained nested import masks; editable text line limits, spacing and minimum scale; fill / fit / stretch image modes and frosted materials.
 - Top-left back buttons; decomposition automatically ungroups layers for editing, regrouping and reusable templates.
 - **UI source exports** for SwiftUI, Jetpack Compose and Flutter.
+- One-step layer ordering; merged groups use a single outer frame with group movement, resizing, splitting and member editing.
 - Seven bundled composite styles, categorized template search and a local personal library shared across projects.
 - Enum options and initial-state resolution, grouped forms, top toolbars, mobile form-row styling and initial selection.
 - Structured SwiftUI import with reusable component expansion, independent drafts and separate dynamic-content / unmatched-view reports.
-- 27 local MCP tools for inspecting and editing designs, importing icons and exporting source.
+- 28 local MCP tools for inspecting and editing designs, importing icons and exporting source.
 
 ### Quick start
 

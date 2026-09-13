@@ -45,6 +45,8 @@ import StudioCore
     var dragging=false
     var dragFrames:[String:Rect]=[:]
     var dragSnapshot:DesignProject?
+    @ObservationIgnored var groupStart:Rect?
+    @ObservationIgnored var groupScrollOffset:Double=0
     var revisionOnDisk:Int
     var canUndo:Bool { !undoStack.isEmpty }
     var canRedo:Bool { !redoStack.isEmpty }
@@ -127,17 +129,20 @@ import StudioCore
     }
     func deleteSelection() {change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){p.pages[i].nodes.removeAll{selection.contains($0.id) && !$0.locked}}};selection=[]}
     func duplicate() {
-        var copies=page.nodes.filter{selection.contains($0.id)}
-        for i in copies.indices {copies[i].id=UUID().uuidString;copies[i].groupID="";copies[i].name += " 副本";var r=copies[i].frame(variant,device:project.device);r.x += 16;r.y += 16;copies[i].frames[variant.rawValue]=r}
-        change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){p.pages[i].nodes += copies}};selection=Set(copies.map(\.id))
+        let group=completeSelectionGroupID(in:variant),newGroup=UUID().uuidString
+        var copies=page.nodes.filter{group != nil ? $0.groupID==group:selection.contains($0.id)}
+        for i in copies.indices {copies[i].id=UUID().uuidString;copies[i].groupID=group==nil ? "":newGroup;copies[i].name += " 副本"
+            for v in (group==nil ? [variant]:Variant.allCases) {var r=copies[i].frame(v,device:project.device);r.x+=16;r.y+=16;copies[i].frames[v.rawValue]=r}
+        }
+        change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){p.pages[i].nodes += copies}};selection=Set(copies.filter{$0.visibleVariants?.contains(variant.rawValue) ?? true}.map(\.id))
     }
     func align(_ mode:String) {change{p in if let i=p.pages.firstIndex(where:{$0.id==pageID}){LayoutEngine.align(&p.pages[i].nodes,ids:selection,variant:variant,device:p.device,alignment:mode)}}}
-    func reorder(front:Bool) {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};let picked=p.pages[i].nodes.filter{selection.contains($0.id)};p.pages[i].nodes.removeAll{selection.contains($0.id)};if front{p.pages[i].nodes += picked}else{p.pages[i].nodes.insert(contentsOf:picked,at:0)}}}
-    func group() {guard selection.count>1 else{return};let id=UUID().uuidString;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=id}}}
+    func reorder(front:Bool) {reorder(front ? .front:.back)}
+    func group() {guard selection.count>1 else{return};let id=UUID().uuidString;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=id}};status="已合并为组合，显示整体外框"}
     func ungroup() {change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices where selection.contains(p.pages[i].nodes[j].id){p.pages[i].nodes[j].groupID=""}};selection=[];status="已解除组合，可逐项编辑"}
-    func saveTemplate() {guard !selection.isEmpty else{return};templateName=selection.count==1 ? selected?.name ?? "我的组件" : "我的组合组件";templateCategory=TemplateCatalog.suggested(name:templateName,nodes:page.nodes.filter{selection.contains($0.id)});showTemplateComposer=true}
+    func saveTemplate() {guard !selection.isEmpty else{return};templateName=selection.count==1 ? selected?.name ?? "我的组件" : "我的组合组件";templateCategory=TemplateCatalog.suggested(name:templateName,nodes:templateSelectionNodes);showTemplateComposer=true}
     func confirmTemplate() {
-        let nodes=page.nodes.filter{selection.contains($0.id)};guard !nodes.isEmpty else{return}
+        let nodes=templateSelectionNodes;guard !nodes.isEmpty else{return}
         let name=templateName.trimmingCharacters(in:.whitespacesAndNewlines)
         let template=TemplateCatalog.portable(ComponentTemplate(name:name.isEmpty ? "我的组合组件":name,nodes:nodes,category:templateCategory),device:project.device)
         change{$0.templates.append(template)}
@@ -197,7 +202,7 @@ import StudioCore
         for i in project.pages[pi].nodes.indices {let id=project.pages[pi].nodes[i].id;if var original=dragFrames[id]{original.x += r.x-base.x;original.y += r.y-base.y;project.pages[pi].nodes[i].frames[variant.rawValue]=original}}
         SharedTabBar.reconcile(&project,before:before)
     }
-    func finishDrag() {guard dragging else{return};dragging=false;isResizing=false;propertyGesture=false;guideX=nil;guideY=nil;guard let before=dragSnapshot else{return};let after=project;project=before;dragSnapshot=nil;dragFrames=[:];change{$0=after}}
+    func finishDrag() {guard dragging else{return};dragging=false;isResizing=false;propertyGesture=false;guideX=nil;guideY=nil;guard let before=dragSnapshot else{return};let after=project;project=before;dragSnapshot=nil;dragFrames=[:];groupStart=nil;change{$0=after}}
     func beginResize(_ node:DesignNode,variant v:Variant) {
         guard !node.locked else{return}
         variant=v;selection=[node.id];dragging=true;isResizing=true;dragSnapshot=project
@@ -209,8 +214,8 @@ import StudioCore
         SharedTabBar.reconcile(&project,before:before)
     }
 
-    func setWide(_ wide:Bool) {change{$0.wideMode=wide};variant=visibleVariants[0];fitCanvases()}
-    func rotate() {landscape.toggle();variant=visibleVariants[0];selection=Set(page.nodes.filter{selection.contains($0.id) && $0.isVisible(in:variant)}.map(\.id));fitCanvases()}
+    func setWide(_ wide:Bool) {let group=completeSelectionGroupID(in:variant);change{$0.wideMode=wide};variant=visibleVariants[0];if let group{selection=Set(page.nodes.filter{$0.groupID==group && ($0.visibleVariants?.contains(variant.rawValue) ?? true)}.map(\.id))};fitCanvases()}
+    func rotate() {let group=completeSelectionGroupID(in:variant);landscape.toggle();variant=visibleVariants[0];if let group{selection=Set(page.nodes.filter{$0.groupID==group && ($0.visibleVariants?.contains(variant.rawValue) ?? true)}.map(\.id))}else{selection=Set(page.nodes.filter{selection.contains($0.id) && $0.isVisible(in:variant)}.map(\.id))};fitCanvases()}
     func fitCanvases() {let total=visibleVariants.reduce(0.0){$0+project.device.size($1).width};let padding=88.0+Double(visibleVariants.count-1)*44;zoom=max(0.25,min(0.75,(canvasViewportWidth-padding)/total))}
     func copyLayout() {let from=variant;change{p in guard let i=p.pages.firstIndex(where:{$0.id==pageID}) else{return};for j in p.pages[i].nodes.indices {let r=p.pages[i].nodes[j].frame(from,device:p.device),source=p.device.size(from);for v in visibleVariants where v != from {let target=p.device.size(v);p.pages[i].nodes[j].frames[v.rawValue]=Rect(r.x/source.width*target.width,r.y/source.height*target.height,r.width/source.width*target.width,r.height/source.height*target.height)}}};status="已将当前布局同步到另一块屏幕"}
     func newProject() {let panel=NSSavePanel();panel.nameFieldStringValue="未命名.framestudio";if panel.runModal() == .OK,let dest=panel.url {do{let p=try ProjectStore.save(.demo(),to:dest,expectedRevision:nil);adopt(p,url:dest)}catch{self.error=error.localizedDescription}}}

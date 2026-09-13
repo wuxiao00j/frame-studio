@@ -34,22 +34,25 @@ import UniformTypeIdentifiers
     let variant:Variant
     var size:Dimensions {session.project.device.size(variant)}
     var zoom:Double {session.zoom}
+    @State private var scrollOffset:Double=0
     var body:some View {
+        let group=session.selectionGroup(in:variant,offset:scrollOffset)
         VStack(alignment:.leading,spacing:14){
             HStack(spacing:8){Circle().fill(session.variant==variant ? studioAccent : studioMuted.opacity(0.5)).frame(width:6,height:6);Text(variant.title).fontWeight(.medium);Spacer();Text("\(Int(size.width)) × \(Int(size.height)) · 内容 \(Int(session.page.contentHeight(variant,device:session.project.device)))").monospacedDigit().foregroundStyle(studioMuted)}.font(.system(size:11)).frame(width:size.width*zoom)
             ZStack(alignment:.topLeading){
                 Color(hex:session.page.background).onTapGesture{session.selection=[];session.variant=variant}
-                ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer==true}){node in CanvasNode(session:session,node:node,variant:variant)}
+                ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer==true}){node in CanvasNode(session:session,node:node,variant:variant,groupSelected:group != nil)}
                 ScrollView(.vertical,showsIndicators:session.page.isScrollable) {
                     ZStack(alignment:.topLeading) {
                         Color.clear.contentShape(Rectangle()).onTapGesture{session.selection=[];session.variant=variant}
-                        ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && !$0.isFixed}){node in CanvasNode(session:session,node:node,variant:variant)}
+                        ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && !$0.isFixed}){node in CanvasNode(session:session,node:node,variant:variant,groupSelected:group != nil)}
                     }.frame(width:size.width,height:session.page.contentHeight(variant,device:session.project.device))
                         .background(GeometryReader{proxy in Color.clear.preference(key:ArtboardScrollKey.self,value:-proxy.frame(in:.named(variant.rawValue)).minY)})
-                }.coordinateSpace(name:variant.rawValue).scrollDisabled(!session.page.isScrollable)
-                    .onPreferenceChange(ArtboardScrollKey.self){offset in session.scrollOffsets[variant]=max(0,offset)}
+                }.coordinateSpace(name:variant.rawValue).scrollDisabled(!session.page.isScrollable || session.isResizing)
+                    .onPreferenceChange(ArtboardScrollKey.self){offset in scrollOffset=Double(max(0,offset));session.scrollOffsets[variant]=max(0,offset)}
                     .id(session.pageID+variant.rawValue)
-                ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer != true}){node in CanvasNode(session:session,node:node,variant:variant)}
+                ForEach(session.page.nodes.filter{$0.isVisible(in:variant) && $0.isFixed && $0.backgroundLayer != true}){node in CanvasNode(session:session,node:node,variant:variant,groupSelected:group != nil)}
+                if let group {GroupSelectionView(session:session,group:group,offset:scrollOffset)}
                 if session.sidebarOpen {SidebarOverlay(session:session,size:size)}
                 HStack{Text("9:41").fontWeight(.semibold);Spacer();Image(systemName:"cellularbars");Image(systemName:"wifi");Image(systemName:"battery.100percent")}.font(.system(size:12)).foregroundStyle(Color(hex:"252336")).padding(.horizontal,26).frame(width:size.width,height:44).background(Color(hex:session.page.background)).allowsHitTesting(false)
                 if session.variant==variant,let x=session.guideX{Path{p in p.move(to:CGPoint(x:x,y:0));p.addLine(to:CGPoint(x:x,y:size.height))}.stroke(Color.pink,lineWidth:1/zoom).allowsHitTesting(false)}
@@ -73,9 +76,10 @@ import UniformTypeIdentifiers
     @Bindable var session:EditorSession
     let node:DesignNode
     let variant:Variant
+    var groupSelected=false
     @State private var resizeStart:Rect?
     var rect:Rect {node.frame(variant,device:session.project.device)}
-    var selected:Bool {session.selection.contains(node.id) && session.variant==variant && !session.preview}
+    var selected:Bool {session.selection.contains(node.id) && session.variant==variant && !session.preview && !groupSelected}
     var body:some View {
         ComponentPreview(node:node,corners:session.page.corners(node,variant:variant,device:session.project.device),variant:variant,activePage:session.pageID,interactive:session.preview,navigate:session.selectPage,openSidebar:{session.sidebarOpen.toggle()})
             .allowsHitTesting(session.preview || node.kind == .tabBar || node.kind == .sidebar)
@@ -104,7 +108,7 @@ import UniformTypeIdentifiers
             .contentShape(Rectangle())
             .simultaneousGesture(TapGesture().onEnded { if !session.preview && node.kind != .tabBar && node.kind != .sidebar {session.variant=variant;session.select(node,additive:NSEvent.modifierFlags.contains(.shift))} })
             .simultaneousGesture(DragGesture(minimumDistance:4,coordinateSpace:.global).onChanged{g in guard !session.preview,!node.locked,!session.isResizing,resizeStart==nil else{return};if !session.dragging{session.beginDrag(node,variant:variant)};session.drag(node,translation:g.translation)}.onEnded{_ in session.finishDrag()})
-            .contextMenu{Button("选择组件"){session.variant=variant;session.selection=[node.id]};Button("复制"){session.selection=[node.id];session.duplicate()};Button("组合选中"){session.group()}.disabled(!session.selection.contains(node.id) || session.selection.count<2);Button("解除组合"){if !session.selection.contains(node.id){session.select(node)};session.ungroup()}.disabled(node.groupID.isEmpty);Button("存为组合组件"){if !session.selection.contains(node.id){session.select(node)};session.saveTemplate()};if node.kind.decomposable{Button("拆分为基础组件"){session.decompose(node.id)}};Button(node.locked ? "解锁" : "锁定"){session.updateNode(node.id){$0.locked.toggle()}};Divider();Button("删除",role:.destructive){session.selection=[node.id];session.deleteSelection()}}
+            .contextMenu{Button("选择组件"){session.variant=variant;session.selection=[node.id]};Button("复制"){session.selection=[node.id];session.duplicate()};Button("合并组件"){session.group()}.disabled(!session.selection.contains(node.id) || session.selection.count<2);Button("拆分组合"){if !session.selection.contains(node.id){session.select(node)};session.ungroup()}.disabled(node.groupID.isEmpty);Button("存为组合组件"){if !session.selection.contains(node.id){session.select(node)};session.saveTemplate()};if node.kind.decomposable{Button("拆分为基础组件"){session.decompose(node.id)}};Button(node.locked ? "解锁" : "锁定"){session.updateNode(node.id){$0.locked.toggle()}};Divider();Button("删除",role:.destructive){session.selection=[node.id];session.deleteSelection()}}
             .position(x:rect.midX,y:rect.midY)
     }
 }

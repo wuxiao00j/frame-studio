@@ -23,7 +23,7 @@ def tool(name,args=None,error=False):
 assert rpc('tools/list')['error']['code']==-32002
 assert rpc('initialize',{'protocolVersion':'2025-06-18','clientInfo':{'name':'acceptance','version':'1.0'},'capabilities':{}})['result']['protocolVersion']=='2025-06-18'
 process.stdin.write('{"jsonrpc":"2.0","method":"notifications/initialized"}\n');process.stdin.flush()
-assert len(rpc('tools/list')['result']['tools'])==27
+assert len(rpc('tools/list')['result']['tools'])==28
 p=tool('get_project');old=p['revision']; first=p['pages'][0]['id']
 p=tool('create_page',{'name':'MCP Test','expectedRevision':old});page=p['pages'][-1]['id']
 assert '更新' in tool('create_page',{'name':'Stale','expectedRevision':old},error=True)
@@ -69,6 +69,17 @@ assert pathlib.Path(export,'GeneratedApp.xcodeproj','project.pbxproj').exists()
 before=len(p['pages']); p=tool('import_design',{'path':str(pathlib.Path(export,'Design.framestudio')),'mode':'append','expectedRevision':p['revision']})
 assert len(p['pages'])==before*2
 ids=[n['id'] for page in p['pages'] for n in page['nodes']];assert len(ids)==len(set(ids))
+p=tool('create_page',{'name':'Layer order acceptance','expectedRevision':p['revision']});layer_page=p['pages'][-1]['id'];layer_ids=[]
+for index in range(3):
+    p=tool('add_component',{'pageID':layer_page,'kind':'rectangle','properties':{'text':str(index)},'expectedRevision':p['revision']});layer_ids.append(p['pages'][-1]['nodes'][-1]['id'])
+layer_revision=p['revision']
+p=tool('reorder_components',{'pageID':layer_page,'nodeIDs':[layer_ids[1]],'variant':'standardPortrait','action':'forward','expectedRevision':layer_revision})
+assert [n['id'] for n in p['pages'][-1]['nodes']]==[layer_ids[0],layer_ids[2],layer_ids[1]]
+before_bytes=project.read_bytes()
+tool('reorder_components',{'pageID':layer_page,'nodeIDs':[layer_ids[1]],'variant':'standardPortrait','action':'backward','expectedRevision':layer_revision},error=True)
+assert project.read_bytes()==before_bytes
+p=tool('reorder_components',{'pageID':layer_page,'nodeIDs':[layer_ids[1]],'variant':'standardPortrait','action':'backward','expectedRevision':p['revision']})
+assert [n['id'] for n in p['pages'][-1]['nodes']]==layer_ids
 process.stdin.write('not-json\n');process.stdin.flush();assert json.loads(process.stdout.readline())['error']['code']==-32700
 process.stdin.close();assert process.wait(timeout=10)==0
-print(f'MCP_ACCEPTANCE_PASS: 27 tools, revision conflicts, atomic rollback, navigation, 43 components, source import, JSON round-trip, asset export.\nExport: {export}')
+print(f'MCP_ACCEPTANCE_PASS: 28 tools, revision conflicts, atomic rollback, navigation, 43 components, source import, JSON round-trip, asset export.\nExport: {export}')

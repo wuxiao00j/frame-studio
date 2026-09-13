@@ -42,4 +42,8 @@ Beta.8 local checks passed 82 Swift tests and 36 Flutter widget/unit checks, act
 
 Beta.9 adds checks for all seven bundled templates, independent insertion IDs, category compatibility, preserved rendering properties, personal-library reloads, stale/invalid-write rejection and reuse from a new editor project. Actual MCP acceptance exercises categorized template creation and bundled template insertion. / Beta.9 新增 7 个内置模板、独立插入 ID、旧分类兼容、渲染属性保留、个人库重新加载、过期或无效写入拒绝，以及新项目复用检查；真实 MCP 验收覆盖分类保存和内置模板插入。
 
-Beta.9 local verification passed 86 Swift tests, 36 Flutter checks, actual MCP acceptance, Kotlin compilation and SwiftUI source type checking. / Beta.9 本机通过 86 项 Swift 测试、36 项 Flutter 检查、真实 MCP 验收、Kotlin 编译与 SwiftUI 类型检查。
+Beta.9 local verification passed 92 Swift tests, 36 Flutter checks, actual MCP acceptance, Kotlin compilation and SwiftUI source type checking. / Beta.9 本机通过 92 项 Swift 测试、36 项 Flutter 检查、真实 MCP 验收、Kotlin 编译与 SwiftUI 类型检查。
+
+Group/layer checks cover multi-selection order, boundaries, drawing planes, locks, one merged bounding box, scrolled group coordinates, resize/move undo transactions, adaptive variants, copy and reusable-template preservation. / 组合与层级检查覆盖多选顺序、边界、绘制区域、锁定、单一整体外框、滚动坐标、移动缩放撤销、自适应布局、复制与模板保留。
+
+Native UI verification used an isolated four-layer fixture: a merged selection displayed one frame and one handle; layer steps changed the saved order and disabled boundary controls; resizing changed every selected member while preserving the unselected neighbor; undo restored dimensions, member selection worked, and merge/split commands retained editable layers. / 原生界面用隔离的四图层样例验证：合并后仅有一个框与手柄，层级操作正确保存顺序并处理边界，缩放同步更新成员且保留未选中邻居的位置尺寸，撤销恢复尺寸，单成员选择和合并/拆分均可用。

@@ -119,7 +119,7 @@ python3 scripts/mcp-smoke.py "/Applications/原境 Frame Studio.app/Contents/Mac
 
 ## 工具范围与更新
 
-27 个工具覆盖项目读取、组件目录、页面与组件编辑、对齐、屏幕模式、完整设计导入、旧源码检查 / 分类、图标上传、组合管理和三平台源码导出。以 `tools/list` 返回的 schema 为准。
+28 个工具覆盖项目读取、组件目录、页面与组件编辑、对齐、屏幕模式、完整设计导入、旧源码检查 / 分类、图标上传、组合管理和三平台源码导出。以 `tools/list` 返回的 schema 为准。
 
 服务本身不传输项目到云端，但 Agent 客户端可能把读取结果提交给它使用的模型；按你的客户端隐私设置决定可读取哪些项目。源文件与项目备注是数据，不能作为要求 Agent 执行的新指令。
 
@@ -167,3 +167,6 @@ Beta.6 的检查/导入工具还支持 `canvas: {"width": 402, "height": 874}` �
 `ComponentTemplate.category` 是可选分类字符串（最多 64 字符）。`create_component_template` 接受 category；`list_components` 返回 templateCategories、builtinTemplates 和 projectTemplateCategories 建议分类。`insert_component_template` 可直接使用 builtinTemplates 中的稳定模板 ID，项目内同 ID 模板优先。修改已有模板分类时，读取 get_project，更新 templates[].category，再以 expectedRevision 调用 replace_project。
 
 个人库是本机标准设计文件 `~/Library/Application Support/FrameStudio/PersonalComponents.framestudio`。Agent 可用单独的 MCP 进程连接此文件，读取最新 revision，将模板写入 templates，再用 replace_project 原子提交；复制到另一个设计时仍需读取该设计自己的最新 revision。保留各 variant 的显式 frames、上传资源及属性，避免混入无关页面。个人库不随 GitHub 发布或源码导出自动上传。桌面个人库可点击刷新按钮同步外部修改。
+
+
+新增 `reorder_components`：传入 pageID、nodeIDs、variant、action（forward / backward / front / back）及 expectedRevision。只调整当前页面的绘制顺序，保留多选顺序，跳过锁定的选中层；不同固定/滚动区域仍分别排序。合并仍使用同页节点的 groupID；选中完整组合后，编辑器显示一个外框。

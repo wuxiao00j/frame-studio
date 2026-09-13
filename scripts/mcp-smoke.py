@@ -8,6 +8,6 @@ with tempfile.TemporaryDirectory(prefix='frame-studio-mcp-') as temp:
     result=subprocess.run([str(pathlib.Path(a.binary).expanduser().resolve()),'--project',path],input='\n'.join(json.dumps(x) for x in requests)+'\n',text=True,capture_output=True,timeout=20,check=True)
     messages={m['id']:m for m in map(json.loads,result.stdout.splitlines())}
     assert messages[1]['result']['serverInfo']['name']=='frame-studio'
-    assert len(messages[2]['result']['tools'])==27
+    assert len(messages[2]['result']['tools'])==28
     assert not messages[3]['result']['isError']
-    print('MCP_SMOKE_PASS: '+messages[1]['result']['serverInfo']['version']+' · 27 tools · get_project OK')
+    print('MCP_SMOKE_PASS: '+messages[1]['result']['serverInfo']['version']+' · 28 tools · get_project OK')
