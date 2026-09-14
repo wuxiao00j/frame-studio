@@ -4,6 +4,18 @@ import StudioCore
 @testable import FrameStudio
 
 final class RenderingTests:XCTestCase {
+    func testOvalAndCapsulePreviewKeepTheirActualOutline() async throws {
+        try await MainActor.run {
+            for kind in [ComponentKind.ellipse,.capsule,.circle] {
+                var n=DesignNode(kind:kind);n.fill="FF0000";n.borderWidth=0;n.shadow=0
+                let renderer=ImageRenderer(content:ComponentPreview(node:n).frame(width:200,height:100));renderer.scale=1
+                let image=try XCTUnwrap(renderer.nsImage),tiff=try XCTUnwrap(image.tiffRepresentation),bitmap=try XCTUnwrap(NSBitmapImageRep(data:tiff))
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x:100,y:50)).alphaComponent,1,accuracy:0.05,kind.rawValue)
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x:2,y:2)).alphaComponent,0,accuracy:0.05)
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x:10,y:50)).alphaComponent,kind == .circle ? 0:1,accuracy:0.05,kind.rawValue)
+            }
+        }
+    }
     func testImportedChineseParagraphHasEnoughHeightForSwiftUI() async throws {
         try await MainActor.run {
             let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

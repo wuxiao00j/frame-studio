@@ -100,6 +100,7 @@ struct SwiftViewMember {
     var parameters:[String]=[]
     var defaults:[String:[SwiftToken]]=[:]
     var tupleFields:[String:[String]]=[:]
+    var argumentLabels:[String:String]=[:]
 }
 struct SwiftViewDefinition {
     var name:String
@@ -123,7 +124,9 @@ struct SwiftViewIndex {
     var valueDefaults:[String:[String:[SwiftToken]]]=[:]
     var enums:[String:SwiftEnumDefinition]=[:]
     var files:[String]=[]
-    init(files:[URL]) {
+    var resources=SwiftImportResources()
+    init(files:[URL],resources:SwiftImportResources=SwiftImportResources()) {
+        self.resources=resources
         var units:[(String,[SwiftToken])]=[]
         for file in files {
             guard let data=try? Data(contentsOf:file),data.count<2_000_000,let source=String(data:data,encoding:.utf8) else{continue}
@@ -168,7 +171,7 @@ struct SwiftViewIndex {
                 let close=SwiftSourceSyntax.end(t,open)
                 if close<t.count,let brace=(close+1..<t.count).first(where:{t[$0].text=="{"}) {
                     let end=SwiftSourceSyntax.end(t,brace),params=Array(t[(open+1)..<close]);let (names,defaults)=parameters(params)
-                    functions[(path+[t[i+2].text]).joined(separator:".")]=SwiftViewMember(body:Array(t[(brace+1)..<end]),parameters:names,defaults:defaults,tupleFields:tupleFields(params));i=end+1;continue
+                    functions[(path+[t[i+2].text]).joined(separator:".")]=SwiftViewMember(body:Array(t[(brace+1)..<end]),parameters:names,defaults:defaults,tupleFields:tupleFields(params),argumentLabels:parameterLabels(params));i=end+1;continue
                 }
             }
             if ["(","[","{"].contains(t[i].text){i=SwiftSourceSyntax.end(t,i)};i+=1
@@ -195,6 +198,11 @@ struct SwiftViewIndex {
             if let eq=part.firstIndex(where:{$0.text=="="}){defaults[name]=Array(part.dropFirst(eq+1))}
         };return(names,defaults)
     }
+    func parameterLabels(_ t:[SwiftToken])->[String:String] {
+        var result:[String:String]=[:]
+        for raw in SwiftSourceSyntax.split(t) {let part=SwiftSourceSyntax.compact(raw);if let colon=part.firstIndex(where:{$0.text==":"}),colon>0{result[part[colon-1].text]=part[0].text}}
+        return result
+    }
     func tupleFields(_ t:[SwiftToken])->[String:[String]] {
         var result:[String:[String]]=[:]
         for raw in SwiftSourceSyntax.split(t) {
@@ -212,24 +220,24 @@ struct SwiftViewIndex {
             if ["var","let","func","init"].contains(keyword),i+1<t.count {
                 let name=keyword=="init" ? "init":t[i+1].text;var j=i+(keyword=="init" ? 1:2)
                 var params:[String]=[],defaults:[String:[SwiftToken]]=[:]
-                var tuples:[String:[String]]=[:]
+                var tuples:[String:[String]]=[:],labels:[String:String]=[:]
                 if ["func","init"].contains(keyword) {
                     while j<t.count && t[j].text != "(" && t[j].text != "{"{j+=1}
-                    if j<t.count,t[j].text=="(" {let end=SwiftSourceSyntax.end(t,j);let signature=Array(t[(j+1)..<end]);(params,defaults)=parameters(signature);tuples=tupleFields(signature);j=min(end+1,t.count)}
+                    if j<t.count,t[j].text=="(" {let end=SwiftSourceSyntax.end(t,j);let signature=Array(t[(j+1)..<end]);(params,defaults)=parameters(signature);tuples=tupleFields(signature);labels=parameterLabels(signature);j=min(end+1,t.count)}
                 }
                 let typeStart=j
                 while j<t.count && !(["func","init"].contains(keyword) ? ["{","="].contains(t[j].text) : ["{","=","\n",";"].contains(t[j].text)){j+=1}
                 if j<t.count,t[j].text=="{" {
                     let end=SwiftSourceSyntax.end(t,j),type=SwiftSourceSyntax.text(Array(t[typeStart..<j]))
                     if name=="body" || type.contains("someView") || type.contains("anyView") {
-                        view.members[name]=SwiftViewMember(body:Array(t[(j+1)..<end]),parameters:params,defaults:defaults,tupleFields:tuples)
+                        view.members[name]=SwiftViewMember(body:Array(t[(j+1)..<end]),parameters:params,defaults:defaults,tupleFields:tuples,argumentLabels:labels)
                     }
                     else if type.hasPrefix(":["),type.hasSuffix("]") {
                         view.collections[name]=String(type.dropFirst(2).dropLast())
                         let value=SwiftSourceSyntax.compact(Array(t[(j+1)..<end])).filter{$0.text != "return"}
                         if !value.contains(where:{["if","switch","for","var","let"].contains($0.text)}){view.defaults[name]=value}
                     }
-                    if keyword != "init" && view.members[name]==nil {view.computed[name]=SwiftViewMember(body:Array(t[(j+1)..<end]),parameters:params,defaults:defaults,tupleFields:tuples)}
+                    if keyword != "init" && view.members[name]==nil {view.computed[name]=SwiftViewMember(body:Array(t[(j+1)..<end]),parameters:params,defaults:defaults,tupleFields:tuples,argumentLabels:labels)}
                     if keyword=="init" {
                         view.defaults.merge(defaults){old,_ in old}
                         let body=Array(t[(j+1)..<end]);var at=0
@@ -251,6 +259,8 @@ struct SwiftViewIndex {
                 if annotated || slotTypes.contains(where:{type==":"+$0 || type.hasSuffix("->"+$0)}) {if !view.slots.contains(name){view.slots.append(name)}}
                 // Keep unset strings explicit so reusable templates remain editable.
                 if type==":String" {view.defaults[name]=[SwiftToken(text:"\"〈\(name)〉\"",line:t[i].line,string:true)]}
+                let state=t[max(0,i-9)..<i].contains{["State","Published"].contains($0.text)}
+                if keyword=="var",state,type.hasSuffix("?"){view.defaults[name]=SwiftSourceSyntax.tokens("nil")}
                 i=max(j,i+1);continue
             }
             if ["(","[","{"].contains(keyword){i=SwiftSourceSyntax.end(t,i)};i+=1

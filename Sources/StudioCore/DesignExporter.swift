@@ -96,7 +96,7 @@ public enum DesignExporter {
         json["items"]=node.items.map{item -> [String:Any] in
             let asset=item.iconData?.isEmpty==false ? "assets/\(itemAssetName(node,item,false)).png":""
             let selectedAsset=item.selectedIconData?.isEmpty==false ? "assets/\(itemAssetName(node,item,true)).png" : (item.selectedSymbol == nil ? asset:"")
-            return ["id":item.id,"title":item.title,"symbol":MaterialSymbols.key(item.symbol),"pageID":item.pageID,"iconAsset":asset,"selectedSymbol":MaterialSymbols.key(item.activeSymbol),"selectedAsset":selectedAsset]
+            return ["id":item.id,"title":item.title,"symbol":item.symbol.isEmpty ? "":MaterialSymbols.key(item.symbol),"pageID":item.pageID,"iconAsset":asset,"selectedSymbol":item.activeSymbol.isEmpty ? "":MaterialSymbols.key(item.activeSymbol),"selectedAsset":selectedAsset]
         }
         json["layouts"]=Variant.allCases.map{variant -> [String:Double] in
             let r=node.frame(variant,device:device),s=device.size(variant),c=page.corners(node,variant:variant,device:device)

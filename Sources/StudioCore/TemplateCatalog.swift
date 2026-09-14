@@ -8,7 +8,7 @@ public enum TemplateCatalog {
         if !kinds.isDisjoint(with:[.navigationBar,.tabBar,.sidebar,.backButton]) || ["header","hero"].contains(where:name.contains){return categories[1]}
         if ["background","atmosphere","swatch"].contains(where:name.contains){return categories[4]}
         if ["avatar","photo","image"].contains(where:name.contains){return categories[5]}
-        if !kinds.isDisjoint(with:[.listRow,.card,.profileRow]) || ["card","row","section","slip"].contains(where:name.contains){return categories[2]}
+        if !kinds.isDisjoint(with:[.listRow,.card,.profileRow,.keyValueRow,.emptyState]) || ["card","row","section","slip"].contains(where:name.contains){return categories[2]}
         if !kinds.isDisjoint(with:[.button,.textButton,.iconButton,.badge]) || ["button","pill","label","tag","toast","menu","badge","capsule"].contains(where:name.contains){return categories[3]}
         return categories[6]
     }

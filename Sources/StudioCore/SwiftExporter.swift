@@ -121,7 +121,7 @@ public enum SwiftExporter {
             let align=["leading","center","trailing"].contains(n.textAlignment) ? n.textAlignment : "leading"
             let radii=Variant.allCases.map{page.corners(n,variant:$0,device:project.device)}
             func values(_ key:KeyPath<CornerRadii,Double>)->String {"["+radii.map{number($0[keyPath:key])}.joined(separator:", ")+"][variant]"}
-            let shape="UnevenRoundedRectangle(topLeadingRadius: \(values(\.tl)), bottomLeadingRadius: \(values(\.bl)), bottomTrailingRadius: \(values(\.br)), topTrailingRadius: \(values(\.tr)))"
+            let shape=n.kind == .ellipse ? "Ellipse()":n.kind == .capsule ? "Capsule()":n.kind == .circle ? "Circle()":"UnevenRoundedRectangle(topLeadingRadius: \(values(\.tl)), bottomLeadingRadius: \(values(\.bl)), bottomTrailingRadius: \(values(\.br)), topTrailingRadius: \(values(\.tr)))"
             return """
                 // \(n.name.replacingOccurrences(of:"\n",with:" ").replacingOccurrences(of:"\r",with:" "))
                 private var element\(i): some View {
@@ -129,7 +129,7 @@ public enum SwiftExporter {
                         .font(.system(size: \(number(n.fontSize)), weight: .\(weight)))
                         .foregroundStyle(Color(designHex: \(literal(n.foreground))))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .\(align))
-                        .background(\([ComponentKind.circle,.rectangle,.divider].contains(n.kind) ? "Color.clear":"Rectangle().fill(\(paintExpression(n)))"))
+                        .background(\([ComponentKind.circle,.rectangle,.divider,.ellipse,.capsule].contains(n.kind) ? "Color.clear":"Rectangle().fill(\(paintExpression(n)))"))
                         .clipShape(\(shape))
                         .overlay(\(shape).stroke(Color(designHex: \(literal(n.borderColor))), lineWidth: \(number(n.borderWidth))))
                         .shadow(color: Color(designHex: \(literal(n.shadowColor ?? (n.shadow>0 ? "00000017":"00000000")))), radius: \(number(n.shadow)), x: \(number(n.shadowX ?? 0)), y: \(number(n.shadowY ?? n.shadow/3)))
@@ -185,6 +185,18 @@ public enum SwiftExporter {
         let chevron=glyphExpression("chevron.right",n.chevronIconData?.isEmpty==false ? DesignExporter.iconAssetName(n,"chevron"):nil,12)
         let trailing=glyphExpression(n.trailingSymbol ?? "square.and.pencil",n.trailingIconData?.isEmpty==false ? DesignExporter.iconAssetName(n,"trailing"):nil,n.iconSize)
         switch n.kind {
+        case .ellipse:return "Ellipse().fill(\(paintExpression(n)))"
+        case .capsule:return "Capsule().fill(\(paintExpression(n)))"
+        case .keyValueRow:return "HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+";":"")Text(\(t)); Spacer(minLength: 8); Text(\(sub)).opacity(0.55); \(n.hasChevron ? chevron+".opacity(0.4)":"EmptyView()") }.padding(.horizontal, \(pad)).onTapGesture { navigate(\(literal(n.targetPageID))) }"
+        case .menuButton:
+            let actions=n.items.map{item -> String in
+                let icon = !item.symbol.isEmpty || item.iconData?.isEmpty==false ? glyphExpression(item.symbol,item.iconData?.isEmpty==false ? DesignExporter.itemAssetName(n,item,false):nil,n.iconSize)+";":""
+                return "Button { navigate(\(literal(item.pageID))) } label: { HStack { \(icon) Text(\(literal(item.title))) } }"
+            }.joined(separator:"; ")
+            return "Menu { \(actions) } label: { HStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+";":"")\(buttonLabel) }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(.horizontal, \(pad)) }"
+        case .emptyState:
+            let action=(n.actionTitle?.isEmpty==false) ? "Button { navigate(\(literal(n.targetPageID))) } label: { Text(\(literal(n.actionTitle!))).font(.system(size: 15, weight: .medium)).foregroundStyle(\(accent)) }.buttonStyle(.plain)":"EmptyView()"
+            return "VStack(spacing: \(gap)) { \(n.hasIcon ? leadingIcon+".foregroundStyle(\(accent));":"")Text(\(t)).fontWeight(.semibold).multilineTextAlignment(.center); Text(\(sub)).font(.system(size: \(number(max(11,n.fontSize-5))))).multilineTextAlignment(.center).opacity(0.55); \(action) }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(\(pad))"
         case .text:return "Text(\(t)).lineLimit(\(n.lineLimit.map(String.init) ?? "nil")).lineSpacing(\(number(n.lineSpacing ?? 0))).minimumScaleFactor(\(number(n.minimumScaleFactor ?? 1))).multilineTextAlignment(.\(["leading","center","trailing"].contains(n.textAlignment) ? n.textAlignment : "leading"))"
         case .icon:return "\(n.iconData != nil ? leadingIcon:glyph).frame(maxWidth: .infinity).onTapGesture { navigate(\(literal(n.targetPageID))) }"
         case .iconButton:return "Button(action: openSidebar) { \(n.iconData != nil ? leadingIcon:glyph).frame(maxWidth: .infinity, maxHeight: .infinity) }.buttonStyle(.plain)"
@@ -222,7 +234,7 @@ public enum SwiftExporter {
         case .rating:return "DesignerRating(initial: \(number(n.number)), count: \(Int(n.maximum)), size: \(icon), gap: \(gap), accent: \(accent))"
         case .loading:return "ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)"
         case .rectangle:return "Rectangle().fill(\(paintExpression(n)))"
-        case .circle:return "Circle().fill(\(paintExpression(n)))"
+        case .circle:return "Circle().fill(\(paintExpression(n))).frame(maxWidth: .infinity, maxHeight: .infinity)"
         case .spacer:return "Color.clear"
         case .qrCode,.chevron:return "\(leadingIcon).frame(maxWidth: .infinity, maxHeight: .infinity).onTapGesture { navigate(\(literal(n.targetPageID))) }"
         case .statistic:return "VStack(alignment: .leading, spacing: 8) { HStack { \(n.hasIcon ? leadingIcon+";":"")Text(\(t)).font(.system(size: 13)) }; Text(\(sub)).font(.system(size: \(number(n.fontSize)), weight: .semibold)) }.padding(\(pad))"

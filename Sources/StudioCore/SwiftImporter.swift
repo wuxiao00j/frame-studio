@@ -6,7 +6,8 @@ public struct SwiftImportOptions:Codable,Sendable {
     public var colors:[String:String]
     public var canvas:Dimensions?
     public var topInset:Double?
-    public init(values:[String:String]=[:],colors:[String:String]=[:],canvas:Dimensions?=nil,topInset:Double?=nil){self.values=values;self.colors=colors;self.canvas=canvas;self.topInset=topInset}
+    public var language:String?
+    public init(values:[String:String]=[:],colors:[String:String]=[:],canvas:Dimensions?=nil,topInset:Double?=nil,language:String?=nil){self.values=values;self.colors=colors;self.canvas=canvas;self.topInset=topInset;self.language=language}
 }
 public struct UnmatchedComponent:Codable,Sendable {public var typeName:String;public var sourceReference:String}
 public struct ImportClassification:Codable,Sendable {public var sourceType:String;public var componentKind:String;public var count:Int}
@@ -25,6 +26,7 @@ public struct ImportReport:Codable,Sendable {
 }
 public enum SwiftImporter {
     static let mappings:[String:ComponentKind] = [
+        "Ellipse":.ellipse,"Capsule":.capsule,"LabeledContent":.keyValueRow,"Menu":.menuButton,"ContentUnavailableView":.emptyState,
         "Text":.text,"Label":.iconLabel,"Image":.image,"Icon":.icon,"Button":.button,"ElevatedButton":.button,"FilledButton":.button,
         "TextButton":.textButton,"OutlinedButton":.outlinedButton,"IconButton":.iconButton,"BackButton":.backButton,
         "Toggle":.toggle,"SwitchListTile":.toggle,"Switch":.switchControl,"CheckboxListTile":.checkbox,"Checkbox":.checkbox,"RadioListTile":.radio,"Radio":.radio,
@@ -43,6 +45,7 @@ public enum SwiftImporter {
         for color in options.colors.values{try ProjectStore.validateColor(color)}
         if let canvas=options.canvas {guard [canvas.width,canvas.height].allSatisfy({$0.isFinite && (200...3000).contains($0)}) else{throw StudioError.invalid("导入画布尺寸无效")}}
         if let inset=options.topInset {guard inset.isFinite,(0...200).contains(inset) else{throw StudioError.invalid("顶部安全区无效")}}
+        if let language=options.language {guard language.range(of:"^[A-Za-z0-9_-]{1,32}$",options:.regularExpression) != nil else{throw StudioError.invalid("语言标识无效")}}
         var isDir:ObjCBool=false;guard FileManager.default.fileExists(atPath:url.path,isDirectory:&isDir) else{throw StudioError.invalid("导入路径不存在")}
         let root=isDir.boolValue ? url:url.deletingLastPathComponent()
         let inventory=try SourceInspector.inventory(root)
@@ -52,7 +55,10 @@ public enum SwiftImporter {
         var report=ImportReport(pages:[],warnings:[],files:files.map(\.path).sorted())
         let swiftFiles=files.filter{$0.pathExtension=="swift"}
         if !swiftFiles.isEmpty {
-            report=SwiftStructuredImporter.inspect(files:Array(swiftFiles.prefix(500)),assets:assetFiles,options:options)
+            var metadata=(inventory["metadataFiles"] as? [String] ?? []).map{URL(fileURLWithPath:$0)}
+            let adjacent=root.deletingLastPathComponent().appendingPathComponent(root.lastPathComponent+".xcodeproj/project.pbxproj")
+            if FileManager.default.fileExists(atPath:adjacent.path),(try? adjacent.resourceValues(forKeys:[.isSymbolicLinkKey]).isSymbolicLink) != true,(try? adjacent.deletingLastPathComponent().resourceValues(forKeys:[.isSymbolicLinkKey]).isSymbolicLink) != true,!metadata.contains(adjacent){metadata.append(adjacent)}
+            report=SwiftStructuredImporter.inspect(files:Array(swiftFiles.prefix(500)),assets:assetFiles,options:options,resources:SwiftImportResources(files:metadata,language:options.language))
             report.files=files.map(\.path).sorted()
         }
         var counts:[String:Int]=[:]

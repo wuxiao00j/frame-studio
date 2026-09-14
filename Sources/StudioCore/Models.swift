@@ -3,9 +3,11 @@ import Foundation
 public enum ComponentKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case text, icon, button, iconButton, image, avatar, profileRow, navigationBar, tabBar, sidebar, listRow, card, divider, toggle, textField, searchField, badge, progress, slider, segmented, custom
     case backButton, iconLabel, textButton, outlinedButton, checkbox, radio, stepper, secureField, textArea, selectField, dateField, rating, loading, rectangle, circle, spacer, statistic, alertBanner, qrCode, chevron, switchControl, ringProgress
+    case capsule, ellipse, keyValueRow, menuButton, emptyState
     public var id: String { rawValue }
     public var title: String {
         switch self {
+        case .capsule:"胶囊";case .ellipse:"椭圆";case .keyValueRow:"信息键值行";case .menuButton:"菜单按钮";case .emptyState:"空状态"
         case .backButton: "返回按钮"
         case .iconLabel: "图文标签"; case .textButton: "文字按钮"; case .outlinedButton: "描边按钮"
         case .checkbox: "复选框"; case .radio: "单选按钮"; case .stepper: "步进器"; case .secureField: "密码框"
@@ -22,6 +24,7 @@ public enum ComponentKind: String, Codable, CaseIterable, Identifiable, Sendable
     }
     public var symbol: String {
         switch self {
+        case .capsule:"capsule";case .ellipse:"oval";case .keyValueRow:"text.justify.left";case .menuButton:"ellipsis.circle";case .emptyState:"tray"
         case .backButton: "chevron.left"
         case .iconLabel: "text.bubble"; case .textButton: "text.badge.plus"; case .outlinedButton: "rectangle"
         case .checkbox: "checkmark.square"; case .radio: "record.circle"; case .stepper: "plusminus"; case .secureField: "lock"
@@ -38,6 +41,9 @@ public enum ComponentKind: String, Codable, CaseIterable, Identifiable, Sendable
     }
     public var category: String {
         switch self {
+        case .capsule,.ellipse:"图形与媒体"
+        case .menuButton:"按钮与操作"
+        case .keyValueRow,.emptyState:"预置组合"
         case .text,.badge,.iconLabel: "文字与标签"
         case .icon,.image,.avatar,.rectangle,.circle,.spacer,.divider,.qrCode,.chevron: "图形与媒体"
         case .button,.iconButton,.textButton,.outlinedButton,.backButton: "按钮与操作"
@@ -48,7 +54,7 @@ public enum ComponentKind: String, Codable, CaseIterable, Identifiable, Sendable
         case .custom: "自定义代码"
         }
     }
-    public var decomposable:Bool { [.profileRow,.listRow,.card,.toggle,.button,.outlinedButton,.textButton,.navigationBar,.tabBar,.sidebar,.iconLabel,.statistic,.alertBanner].contains(self) }
+    public var decomposable:Bool { [.profileRow,.listRow,.card,.toggle,.button,.outlinedButton,.textButton,.navigationBar,.tabBar,.sidebar,.iconLabel,.statistic,.alertBanner,.keyValueRow,.emptyState].contains(self) }
     public static let categories=["文字与标签","图形与媒体","按钮与操作","表单与选择","进度与数据","导航","预置组合","自定义代码"]
 
 }
@@ -110,6 +116,7 @@ public struct DesignNode: Codable, Equatable, Identifiable, Sendable {
     public var controlStyle:String?
     public var selectedIndex:Int?
     public var isEnabled:Bool?
+    public var actionTitle:String?
     public var backgroundLayer:Bool?
     public var visibleVariants:[String]?
     public var blurRadius:Double?
@@ -174,6 +181,11 @@ public struct DesignNode: Codable, Equatable, Identifiable, Sendable {
         self.kind=kind; name=kind.title; text=kind.title
         var r = frame ?? Rect()
         switch kind {
+        case .capsule: text="";fill="EEEAF8";r.width=160;r.height=48;cornerRadius=0
+        case .ellipse: text="";fill="EEEAF8";r.width=160;r.height=96;cornerRadius=0
+        case .keyValueRow: text="名称";subtitle="详细信息";r.width=345;r.height=52;showIcon=false;showChevron=false
+        case .menuButton: text="更多";symbol="ellipsis";r.width=120;r.height=44;showIcon=true;fill="FFFFFF00";items=[.init(title:"编辑",symbol:"pencil"),.init(title:"分享",symbol:"square.and.arrow.up")]
+        case .emptyState: text="暂无内容";subtitle="添加内容后会在这里显示";symbol="tray";iconSize=44;showIcon=true;r.width=345;r.height=210;fill="FFFFFF00";fontSize=20;actionTitle=""
         case .text: fill="FFFFFF00"; text="为灵感，留一点空间。"; fontSize=24; fontWeight="semibold"; r.width=330; r.height=42
         case .icon: fill="FFFFFF00"; r.width=48
         case .iconButton: symbol="sidebar.left"; text="打开侧边栏"; r.width=44; r.height=44

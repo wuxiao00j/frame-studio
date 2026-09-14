@@ -44,7 +44,8 @@ p=tool('delete_page',{'pageID':page,'expectedRevision':p['revision']})
 (artifacts/'import-fixture').mkdir(exist_ok=True)
 source=artifacts/'import-fixture/OldUI.swift'
 source.write_text('import SwiftUI\nstruct OldUI: View { var body: some View { VStack { Text("Imported title"); Image(systemName: "star"); Button("Next") {} } } }')
-report=tool('inspect_swift_project',{'path':str(source)})
+report=tool('inspect_swift_project',{'path':str(source),'language':'en'})
+assert '语言' in tool('inspect_swift_project',{'path':str(source),'language':'../../bad'},error=True)
 assert len(report['pages'][0]['nodes'])==3
 assert 'Imported title' in tool('read_swift_source',{'path':str(source)})['source']
 assert str(source) in tool('inspect_source_project',{'path':str(source.parent)})['sourceFiles']
@@ -52,7 +53,9 @@ assert 'Imported title' in tool('read_ui_source',{'path':str(source)})['source']
 p=tool('import_swift_project',{'path':str(source),'expectedRevision':p['revision']})
 assert p['importNotes']
 p=tool('create_page',{'name':'Every component','expectedRevision':p['revision']});page=p['pages'][-1]['id']
-for entry in tool('list_components')['components']:
+components=tool('list_components')['components']
+assert len(components)==48
+for entry in components:
     p=tool('add_component',{'pageID':page,'kind':entry['kind'],'expectedRevision':p['revision']})
 # Test a real image asset export and all six variants.
 import base64
@@ -82,4 +85,4 @@ p=tool('reorder_components',{'pageID':layer_page,'nodeIDs':[layer_ids[1]],'varia
 assert [n['id'] for n in p['pages'][-1]['nodes']]==layer_ids
 process.stdin.write('not-json\n');process.stdin.flush();assert json.loads(process.stdout.readline())['error']['code']==-32700
 process.stdin.close();assert process.wait(timeout=10)==0
-print(f'MCP_ACCEPTANCE_PASS: 28 tools, revision conflicts, atomic rollback, navigation, 43 components, source import, JSON round-trip, asset export.\nExport: {export}')
+print(f'MCP_ACCEPTANCE_PASS: 28 tools, revision conflicts, atomic rollback, navigation, 48 components, source import, JSON round-trip, asset export.\nExport: {export}')

@@ -33,7 +33,7 @@ let studioLine=Color(hex:"EAE7F0")
             .font(.system(size:node.fontSize,weight:weight))
             .foregroundStyle(Color(hex:node.foreground))
             .frame(maxWidth:.infinity,maxHeight:.infinity,alignment:alignment)
-            .background {if ![.circle,.rectangle,.divider].contains(node.kind){Rectangle().fill(node.paintStyle)}}
+            .background {if ![.circle,.rectangle,.divider,.ellipse,.capsule].contains(node.kind){Rectangle().fill(node.paintStyle)}}
             .clipShape(shape)
             .overlay(shape.stroke(Color(hex:node.borderColor),lineWidth:node.borderWidth))
             .shadow(color:Color(hex:node.shadowColor ?? (node.shadow>0 ? "00000017":"00000000")),radius:node.shadow,x:node.shadowX ?? 0,y:node.shadowY ?? node.shadow/3)
@@ -44,7 +44,7 @@ let studioLine=Color(hex:"EAE7F0")
             .allowsHitTesting(!interactive || node.isEnabled != false)
             .opacity(node.isEnabled==false ? 0.45:1)
             .rotationEffect(.degrees(node.rotation))
-            .onTapGesture{if interactive && !node.targetPageID.isEmpty && [.text,.icon,.image,.avatar,.rectangle,.circle,.spacer,.qrCode,.chevron,.profileRow,.card,.statistic,.alertBanner].contains(node.kind){navigate(node.targetPageID)}}
+            .onTapGesture{if interactive && !node.targetPageID.isEmpty && [.text,.icon,.image,.avatar,.rectangle,.circle,.spacer,.qrCode,.chevron,.profileRow,.card,.statistic,.alertBanner,.keyValueRow].contains(node.kind){navigate(node.targetPageID)}}
             .onAppear{toggle=node.isOn;value=node.value}
             .onChange(of:node.isOn){_,v in toggle=v}
             .onChange(of:node.value){_,v in value=v}
@@ -55,6 +55,7 @@ let studioLine=Color(hex:"EAE7F0")
     }
     @ViewBuilder var standardContent:some View {
         switch node.kind {
+        case .ellipse,.capsule,.keyValueRow,.menuButton,.emptyState: UniversalComponentPreview(node:node,interactive:interactive,navigate:navigate)
         case .text: Text(node.text).lineLimit(node.lineLimit).lineSpacing(node.lineSpacing ?? 0).minimumScaleFactor(node.minimumScaleFactor ?? 1).multilineTextAlignment(node.textAlignment=="center" ? .center : node.textAlignment=="trailing" ? .trailing : .leading).frame(maxWidth:.infinity,alignment:alignment)
         case .icon: icon.frame(maxWidth:.infinity)
         case .iconButton: Button(action:openSidebar){icon.frame(maxWidth:.infinity,maxHeight:.infinity)}.buttonStyle(.plain)
@@ -78,7 +79,7 @@ let studioLine=Color(hex:"EAE7F0")
         case .custom: VStack(spacing:8){Image(systemName:"curlybraces").font(.title2);Text(node.text).font(.caption);Text("自定义 SwiftUI · 导出时生效").font(.system(size:10)).opacity(0.4)}.frame(maxWidth:.infinity)
         }
     }
-    var shape:UnevenRoundedRectangle {let c=corners ?? CornerRadii(node.cornerRadius);return UnevenRoundedRectangle(topLeadingRadius:c.tl,bottomLeadingRadius:c.bl,bottomTrailingRadius:c.br,topTrailingRadius:c.tr)}
+    var shape:ComponentOutline {ComponentOutline(kind:node.kind,corners:corners ?? CornerRadii(node.cornerRadius))}
     @ViewBuilder var icon:some View {
         if let image=PreviewImages.image(node.iconData ?? node.imageData) {Image(nsImage:image).resizable().scaledToFit().frame(width:node.iconSize,height:node.iconSize)}else{Image(systemName:node.symbol).font(.system(size:node.iconSize))}
     }

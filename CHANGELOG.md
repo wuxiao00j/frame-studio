@@ -1,5 +1,23 @@
 # Changelog / 更新日志
 
+## 1.2.0-beta.10 — 2026-09-14
+
+基础组件增至 48 种：新增胶囊、椭圆、键值行、菜单按钮和空状态。菜单支持编辑项目文字、系统或上传图标及目标页面；空状态支持说明、图标和可选操作。键值行与空状态可以拆为基础图层，修改后合并并分类保存到项目或个人组件库。Mac 预览及三平台 UI 源码导出同步支持这些组件。
+
+SwiftUI 导入新增 Menu、LabeledContent、ContentUnavailableView 分类，直接数据列表和 Section 标题 / 页脚；复杂空状态保留为基础图层组合。补充可确定的可选值、条件、局部函数、闭包 / 键路径文案及父页面参数解析。不同调用点参数不一致、循环动态数据等仍保留待补充标记。
+
+导入窗口可选择语言，支持输入语言代码，如 zh-Hans 或 en；“自动”使用源码字符串目录的默认语言。读取普通 xcstrings 翻译、InfoPlist.strings，以及源码 Info.plist / Xcode 中可确定的应用名称和版本。Text 的字符串变量与 verbatim 内容保持原语义；不执行源码、构建脚本或业务闭包。
+
+本阶段主要完善有源码的 SwiftUI 项目。Flutter、Compose 和 Web 源码仍是基础分类与 Agent 辅助还原；不支持把任意已安装 App 或安装包直接转成等价可编辑设计。运行数据、复杂自定义布局、动画、材质和未支持的修饰器仍需对照原 App 补全。“无未匹配组件”不代表视觉还原已完成。
+
+The component catalog now has 48 types, adding capsule, ellipse, key-value row, menu button and empty state. Menus expose item text, system or uploaded icons and page destinations; empty states expose a description, icon and optional action. Key-value rows and empty states can be decomposed, edited, merged and saved under a category in the project or personal library. Mac previews and all three UI source exports support the new types.
+
+SwiftUI import now classifies Menu, LabeledContent and ContentUnavailableView, supports direct data lists and Section headers / footers, and preserves complex empty states as editable primitive groups. Added resolution for known optional values, conditions, local functions, closure / key-path labels and parent-page inputs. Conflicting call-site inputs and dynamic loop data remain marked for completion.
+
+The import dialog offers language selection and accepts language codes such as zh-Hans or en. Automatic selection uses the source catalog's default language. The importer reads ordinary xcstrings translations, InfoPlist.strings and unambiguous application names / versions from source Info.plist files and Xcode settings. Text string variables and verbatim text preserve their original semantics. Source code, build scripts and business closures are never executed.
+
+This phase focuses on SwiftUI projects with source code. Flutter, Compose and Web source retain basic classification with agent-assisted reconstruction. Arbitrary installed applications or installation packages cannot be directly converted into equivalent editable designs. Runtime data, complex layouts, animations, materials and unsupported modifiers still require comparison with the original app. Having no unmatched components does not establish visual fidelity.
+
 ## 1.2.0-beta.9 — 2026-09-13
 
 图层新增“上一层 / 下一层”，可多选，保留选中图层之间的顺序；支持撤销，边界按钮自动置灰。固定背景、滚动内容和固定前景各自在所属区域内排序。快捷键为 ⌘] / ⌘[。

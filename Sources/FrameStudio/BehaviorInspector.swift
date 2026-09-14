@@ -25,7 +25,7 @@ import StudioCore
                 Toggle("文字前显示图标",isOn:binding(\.showIcon,node.hasIcon))
             }.font(.system(size:11))
         }
-        if [.button,.textButton,.outlinedButton,.iconLabel,.listRow,.card,.alertBanner,.statistic].contains(node.kind) {Toggle("显示前置图标",isOn:binding(\.showIcon,node.hasIcon)).font(.system(size:11))}
+        if [.button,.textButton,.outlinedButton,.iconLabel,.listRow,.card,.alertBanner,.statistic,.menuButton,.emptyState,.keyValueRow].contains(node.kind) {Toggle("显示前置图标",isOn:binding(\.showIcon,node.hasIcon)).font(.system(size:11))}
         if [.icon,.iconButton,.button,.backButton,.iconLabel,.textButton,.outlinedButton,.checkbox,.radio,.toggle,.listRow,.card,.alertBanner,.statistic,.qrCode,.chevron,.navigationBar,.secureField,.searchField].contains(node.kind) {
             InspectorSection(title:"自定义图标") {iconSlot("上传 / 替换图标",key:\.iconData)}
         }
@@ -37,7 +37,7 @@ import StudioCore
                 if node.hasChevron{iconSlot("替换箭头图标",key:\.chevronIconData)}
             }.font(.system(size:11))
         }
-        if node.kind == .listRow {
+        if [.listRow,.keyValueRow].contains(node.kind) {
             InspectorSection(title:"连续列表") {
                 Toggle("显示右箭头",isOn:binding(\.showChevron,node.hasChevron))
                 if node.hasChevron{iconSlot("替换右箭头",key:\.chevronIconData)}
@@ -60,6 +60,7 @@ import StudioCore
                 if node.kind == .stepper{NumberField(label:"步长",value:binding(\.stepValue,node.step))}
             }
         }
+        if node.kind == .emptyState {TextField("操作按钮文字（留空不显示）",text:binding(\.actionTitle,node.actionTitle ?? "")).textFieldStyle(.roundedBorder)}
         if node.kind == .dateField {TextField("日期 yyyy-MM-dd",text:binding(\.dateValue,node.dateValue ?? "2026-01-01")).textFieldStyle(.roundedBorder)}
     }
     @ViewBuilder func iconSlot(_ title:String,key:WritableKeyPath<DesignNode,String?>)->some View {

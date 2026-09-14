@@ -12,13 +12,19 @@ extension SwiftImportLayout {
     }
     func section(_ e:SwiftImportElement,width:Double,style:SwiftImportStyle)->SwiftImportBox {
         var y=0.0,nodes:[DesignNode]=[]
-        let title=text(e.args["$0"],reference:e.reference)
+        let title=text(e.args["$0"],reference:e.reference,localize:e.args["_localizeTitle"] != nil)
         if !title.isEmpty {
             var s=style;s.font=13;s.foreground="8E8E93"
             var n=node(e,kind:.text,style:s,width:max(1,width-32),height:20);n.id=e.id+"-heading";n.text=title
             n.frames["standardPortrait"]=Rect(16,0,max(1,width-32),20);nodes.append(n);y=30
         }
-        let top=y,entries=children(e.children),fill=style.formRowFill
+        let all=children(e.children)
+        for header in all where header.0.type=="SectionHeader" {
+            var s=style;s.font=13;s.foreground="8E8E93"
+            for child in header.0.children {var b=layout(child,width:max(1,width-32),style:s);b.move(16,y);nodes+=b.nodes;y+=b.height}
+            y+=12
+        }
+        let top=y,entries=all.filter{!["SectionHeader","SectionFooter"].contains($0.0.type)},fill=style.formRowFill
         for (i,entry) in entries.enumerated() {
             var box=layout(entry.0,width:max(1,width-32),style:style)
             let rowHeight=max(48,box.height+20)
@@ -29,6 +35,10 @@ extension SwiftImportLayout {
         }
         if fill != "FFFFFF00",y>top {
             var bg=node(e,kind:.rectangle,style:style,width:width,height:y-top);bg.id=e.id+"-group";bg.name="表单分组背景";bg.fill=fill;bg.cornerRadius=24;bg.frames["standardPortrait"]=Rect(0,top,width,y-top);nodes.insert(bg,at:0)
+        }
+        for footer in all where footer.0.type=="SectionFooter" {
+            y+=8;var s=style;s.font=12;s.foreground="8E8E93"
+            for child in footer.0.children {var b=layout(child,width:max(1,width-32),style:s);b.move(16,y);nodes+=b.nodes;y+=b.height}
         }
         return SwiftImportBox(width:width,height:y,nodes:nodes)
     }
@@ -60,7 +70,7 @@ extension SwiftImportLayout {
         var bg=node(e,kind:.rectangle,style:style,width:width,height:44);bg.id=e.id+"-navbg";bg.fill=background ?? "FFFFFFF0";bg.fixedToViewport=true;bg.name="导航背景";nodes.append(bg)
         if let title {
             var s=style;s.font=17;s.weight="semibold";s.alignment="center"
-            var n=node(title,kind:.text,style:s,width:max(1,width-160),height:44);n.text=text(title.args["$0"],reference:title.reference);n.frames["standardPortrait"]=Rect(80,0,max(1,width-160),44);n.fixedToViewport=true;nodes.append(n)
+            var n=node(title,kind:.text,style:s,width:max(1,width-160),height:44);n.text=text(title.args["$0"],reference:title.reference,localize:title.args["_localizeTitle"] != nil);n.frames["standardPortrait"]=Rect(80,0,max(1,width-160),44);n.fixedToViewport=true;nodes.append(n)
         }
         for (items,isLeading) in [(leading,true),(trailing,false)] {
             var x=isLeading ? 16.0:width-80

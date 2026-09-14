@@ -99,3 +99,14 @@ The local personal library retains all six layouts, icons, gradients, masks and 
 Layer controls now include Bring Forward / Send Backward for single or multiple selections, preserving selected-layer order and supporting undo. Boundary actions are disabled. Pinned backgrounds, scrolling content and pinned foregrounds remain in their own drawing planes. Shortcuts are Command-] / Command-[.
 
 Merge Components (Command-G) shows one outer selection frame and one lower-right resize handle. Move the group or resize its layout bounds; Shift preserves the aspect ratio. The inspector offers group coordinates, dimensions and alignment. Select members in the layer list to edit text, icons and colors, or Split Group (Shift-Command-G) to edit independently. A group with locked members cannot be transformed as a whole. Copying or saving a complete group retains members from other layout variants.
+
+
+## Beta.10 Basic components and general import
+
+The component catalog now has 48 types, adding capsule, ellipse, key-value row, menu button and empty state. Menus expose item text, system or uploaded icons and page destinations; empty states expose a description, icon and optional action. Key-value rows and empty states can be decomposed, edited, merged and saved under a category in the project or personal library. Mac previews and all three UI source exports support the new types.
+
+SwiftUI import now classifies Menu, LabeledContent and ContentUnavailableView, supports direct data lists and Section headers / footers, and preserves complex empty states as editable primitive groups. Added resolution for known optional values, conditions, local functions, closure / key-path labels and parent-page inputs. Conflicting call-site inputs and dynamic loop data remain marked for completion.
+
+The import dialog offers language selection and accepts language codes such as zh-Hans or en. Automatic selection uses the source catalog's default language. The importer reads ordinary xcstrings translations, InfoPlist.strings and unambiguous application names / versions from source Info.plist files and Xcode settings. Text string variables and verbatim text preserve their original semantics. Source code, build scripts and business closures are never executed.
+
+This phase focuses on SwiftUI projects with source code. Flutter, Compose and Web source retain basic classification with agent-assisted reconstruction. Arbitrary installed applications or installation packages cannot be directly converted into equivalent editable designs. Runtime data, complex layouts, animations, materials and unsupported modifiers still require comparison with the original app. Having no unmatched components does not establish visual fidelity.

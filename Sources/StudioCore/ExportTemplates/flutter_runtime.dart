@@ -77,7 +77,7 @@ class _DesignElementState extends State<DesignElement> {
  List<Map<String,dynamic>> get items=>(n['items'] as List? ?? []).map((e)=>Map<String,dynamic>.from(e as Map)).toList();
  @override void initState(){super.initState();on=n['isOn']==true;selected=d('selectedIndex').toInt().clamp(0,math.max(0,items.length-1));value=d('value');number=d('numberValue',1);date=DateTime.tryParse(s('dateValue'))??DateTime(2026);}
  TextAlign get align=>s('textAlignment')=='center' ? TextAlign.center:s('textAlignment')=='trailing' ? TextAlign.right:TextAlign.left;
- Widget text(String content,{double? size,Color? color,FontWeight? weight,int? maxLines})=>Text(content,textAlign:align,maxLines:maxLines,overflow:maxLines==null ? null:TextOverflow.ellipsis,style:TextStyle(fontSize:size??d('fontSize',16),color:color??foreground,fontWeight:weight??switch(s('fontWeight')){'bold'=>FontWeight.bold,'semibold'=>FontWeight.w600,'medium'=>FontWeight.w500,_=>FontWeight.normal}));
+ Widget text(String content,{double? size,Color? color,FontWeight? weight,int? maxLines,TextAlign? alignment})=>Text(content,textAlign:alignment??align,maxLines:maxLines,overflow:maxLines==null ? null:TextOverflow.ellipsis,style:TextStyle(fontSize:size??d('fontSize',16),color:color??foreground,fontWeight:weight??switch(s('fontWeight')){'bold'=>FontWeight.bold,'semibold'=>FontWeight.w600,'medium'=>FontWeight.w500,_=>FontWeight.normal}));
  Widget icon({double? size,Color? color,String? key,String? asset}) {
   final path=asset??s('iconAsset'),pixels=size??d('iconSize',22);
   return path.isNotEmpty ? SizedBox(width:pixels,height:pixels,child:Image.asset(path,fit:BoxFit.contain,errorBuilder:(context,error,stack)=>Icon(Icons.broken_image_outlined,size:pixels,color:color??accent))) : Icon(designIcon(key??s('symbol')),size:pixels,color:color??accent);
@@ -91,7 +91,13 @@ class _DesignElementState extends State<DesignElement> {
  @override Widget build(BuildContext context) {
   final f=Map<String,dynamic>.from(n['_corners'] as Map? ?? {});final radius=BorderRadius.only(topLeft:Radius.circular(numProp(f,'tl',d('cornerRadius'))),topRight:Radius.circular(numProp(f,'tr',d('cornerRadius'))),bottomLeft:Radius.circular(numProp(f,'bl',d('cornerRadius'))),bottomRight:Radius.circular(numProp(f,'br',d('cornerRadius'))));
   return LayoutBuilder(builder:(context,bounds) {
-   Widget result=DecoratedBox(decoration:BoxDecoration(color:s('kind')=='circle' ? Colors.transparent:(s('material').isEmpty ? designColor(s('fill')):designMaterialTint(s('material'))),gradient:s('kind')=='circle' || s('material').isNotEmpty ? null:designGradient(n,bounds.biggest),borderRadius:radius,boxShadow:d('shadow')>0 ? [BoxShadow(color:s('shadowColor').isEmpty ? Colors.black.withValues(alpha:0.09):designColor(s('shadowColor')),blurRadius:d('shadow'),offset:Offset(d('shadowX'),d('shadowY',d('shadow')/3)))]:null),child:ClipRRect(borderRadius:radius,child:DecoratedBox(position:DecorationPosition.foreground,decoration:BoxDecoration(borderRadius:radius,border:d('borderWidth')>0 ? Border.all(color:designColor(s('borderColor')),width:d('borderWidth')):null),child:s('material').isEmpty ? content(context):BackdropFilter(filter:ui.ImageFilter.blur(sigmaX:20,sigmaY:20),child:content(context)))));
+   final shapeOnly=['circle','ellipse'].contains(s('kind'));
+   final effectiveRadius=s('kind')=='capsule' ? BorderRadius.circular(math.min(bounds.maxWidth,bounds.maxHeight)/2):radius;
+   Widget result=DecoratedBox(decoration:BoxDecoration(color:shapeOnly ? Colors.transparent:(s('material').isEmpty ? designColor(s('fill')):designMaterialTint(s('material'))),gradient:shapeOnly || s('material').isNotEmpty ? null:designGradient(n,bounds.biggest),borderRadius:effectiveRadius,boxShadow:d('shadow')>0 ? [BoxShadow(color:s('shadowColor').isEmpty ? Colors.black.withValues(alpha:0.09):designColor(s('shadowColor')),blurRadius:d('shadow'),offset:Offset(d('shadowX'),d('shadowY',d('shadow')/3)))]:null),child:ClipRRect(borderRadius:effectiveRadius,child:DecoratedBox(position:DecorationPosition.foreground,decoration:BoxDecoration(borderRadius:effectiveRadius,border:!shapeOnly && d('borderWidth')>0 ? Border.all(color:designColor(s('borderColor')),width:d('borderWidth')):null),child:s('material').isEmpty ? content(context):BackdropFilter(filter:ui.ImageFilter.blur(sigmaX:20,sigmaY:20),child:content(context)))));
+   if(shapeOnly) {
+    final circle=s('kind')=='circle';
+    result=CustomPaint(painter:DesignOvalPainter(n,circle:circle),child:s('material').isEmpty ? const SizedBox.expand():ClipPath(clipper:DesignOvalClipper(circle),child:BackdropFilter(filter:ui.ImageFilter.blur(sigmaX:20,sigmaY:20),child:const SizedBox.expand())));
+   }
    if(d('blurRadius')>0)result=ImageFiltered(imageFilter:ui.ImageFilter.blur(sigmaX:d('blurRadius'),sigmaY:d('blurRadius')),child:result);
    final masks=n['_masks'] as List? ?? const [];
    if(masks.isNotEmpty)result=ClipPath(clipper:DesignImportedClipper(masks),child:result);
@@ -107,6 +113,11 @@ class _DesignElementState extends State<DesignElement> {
   final pad=d('padding',16),gap=d('spacing',12);
   if(s('controlStyle')=='formRow' && ['textField','textArea','selectField','dateField'].contains(s('kind')))return formControl(context);
   switch(s('kind')) {
+   case 'ellipse':case 'circle':return CustomPaint(painter:DesignOvalPainter(n,circle:s('kind')=='circle'),child:const SizedBox.expand());
+   case 'capsule':return const SizedBox.expand();
+   case 'keyValueRow':return hit(Padding(padding:EdgeInsets.symmetric(horizontal:pad),child:Row(children:[if(n['showIcon']==true) ...[icon(color:foreground),SizedBox(width:gap)],Flexible(child:text(s('text'))),const Spacer(),Flexible(child:text(s('subtitle'),color:foreground.withValues(alpha:0.55))),if(n['showChevron']==true) icon(key:'chevronRight',asset:s('chevronAsset'),size:12,color:foreground.withValues(alpha:0.4))])),go);
+   case 'menuButton':return Center(child:PopupMenuButton<String>(enabled:n['isEnabled']!=false,onSelected:widget.navigate,itemBuilder:(_)=>[for(final item in items) PopupMenuItem(value:item['pageID'] as String,child:Row(children:[if((item['symbol'] as String).isNotEmpty || (item['iconAsset'] as String).isNotEmpty) ...[icon(key:item['symbol'],asset:item['iconAsset']),SizedBox(width:gap)],Text(item['title'])]))],child:Padding(padding:EdgeInsets.symmetric(horizontal:pad),child:Row(mainAxisSize:MainAxisSize.min,children:[if(n['showIcon']==true) ...[icon(color:foreground),SizedBox(width:gap)],if(n['showLabel']!=false) text(s('text'))]))));
+   case 'emptyState':return Padding(padding:EdgeInsets.all(pad),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[if(n['showIcon']==true) ...[icon(),SizedBox(height:gap)],text(s('text'),weight:FontWeight.w600,alignment:TextAlign.center),if(s('subtitle').isNotEmpty) ...[SizedBox(height:gap),text(s('subtitle'),size:math.max(11,d('fontSize')-5),color:foreground.withValues(alpha:0.55),alignment:TextAlign.center)],if(s('actionTitle').isNotEmpty) ...[SizedBox(height:gap),TextButton(style:TextButton.styleFrom(minimumSize:Size.zero,padding:EdgeInsets.zero,tapTargetSize:MaterialTapTargetSize.shrinkWrap,foregroundColor:accent),onPressed:go,child:Text(s('actionTitle'),style:const TextStyle(fontSize:15,fontWeight:FontWeight.w500)))]]));
    case 'text':return Align(alignment:align==TextAlign.center ? Alignment.center:align==TextAlign.right ? Alignment.centerRight:Alignment.centerLeft,child:DesignImportedText(value:s('text'),align:align,style:TextStyle(fontSize:d('fontSize',16),color:foreground,fontWeight:s('fontWeight')=='bold' ? FontWeight.bold:s('fontWeight')=='semibold' ? FontWeight.w600:s('fontWeight')=='medium' ? FontWeight.w500:FontWeight.normal),limit:n['lineLimit'] as int?,spacing:d('lineSpacing'),minimumScale:d('minimumScaleFactor',1)));
    case 'icon':return Center(child:glyph());
    case 'iconButton':return hit(Center(child:glyph()),widget.openSidebar);
@@ -140,7 +151,7 @@ class _DesignElementState extends State<DesignElement> {
    case 'rating':return Center(child:FittedBox(fit:BoxFit.scaleDown,child:Row(mainAxisSize:MainAxisSize.min,children:[for(var i=1;i<=d('maximumValue',5).toInt();i++) Padding(padding:EdgeInsets.only(right:i==d('maximumValue',5).toInt()?0:gap),child:hit(Icon(i<=number?Icons.star:Icons.star_border,color:accent,size:d('iconSize')),()=>setState(()=>number=i.toDouble())))])));
    case 'loading':return Center(child:SizedBox(width:24,height:24,child:CircularProgressIndicator(color:accent,strokeWidth:3)));
    case 'rectangle':return const SizedBox.expand();
-   case 'circle':return LayoutBuilder(builder:(context,bounds)=>DecoratedBox(decoration:BoxDecoration(color:s('material').isEmpty ? designColor(s('fill')):designMaterialTint(s('material')),gradient:s('material').isEmpty ? designGradient(n,bounds.biggest):null,shape:BoxShape.circle)));
+
    case 'spacer':return const SizedBox.expand();
    case 'qrCode':case 'chevron':return hit(Center(child:icon(color:foreground)),go);
    case 'statistic':return Padding(padding:EdgeInsets.all(pad),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Row(children:[if(n['showIcon']==true) ...[icon(),const SizedBox(width:8)],Expanded(child:text(s('text'),size:13))]),const SizedBox(height:8),text(s('subtitle'),size:d('fontSize'),weight:FontWeight.w600)]));
@@ -198,4 +209,29 @@ class DesignImportedText extends StatelessWidget {
   }
   return Text(value,textAlign:align,maxLines:limit,overflow:limit==null ? null:TextOverflow.ellipsis,style:sized(size));
  });
+}
+
+Path designOvalPath(Size size,bool circle) {
+ final d=math.min(size.width,size.height);
+ return Path()..addOval(circle ? Rect.fromCenter(center:Offset(size.width/2,size.height/2),width:d,height:d):Offset.zero & size);
+}
+class DesignOvalClipper extends CustomClipper<Path> {
+ final bool circle;DesignOvalClipper(this.circle);
+ @override Path getClip(Size size)=>designOvalPath(size,circle);
+ @override bool shouldReclip(DesignOvalClipper old)=>old.circle!=circle;
+}
+class DesignOvalPainter extends CustomPainter {
+ final Map<String,dynamic> spec;final bool circle;
+ DesignOvalPainter(this.spec,{this.circle=false});
+ @override void paint(Canvas canvas,Size size) {
+  final d=math.min(size.width,size.height),r=circle ? Rect.fromCenter(center:Offset(size.width/2,size.height/2),width:d,height:d):Offset.zero & size;
+  final shadow=numProp(spec,'shadow');
+  if(shadow>0)canvas.drawOval(r.shift(Offset(numProp(spec,'shadowX'),numProp(spec,'shadowY',shadow/3))),Paint()..color=designColor(strProp(spec,'shadowColor').isEmpty ? '00000017':strProp(spec,'shadowColor'))..maskFilter=MaskFilter.blur(BlurStyle.normal,shadow));
+  final fill=Paint()..color=designColor(strProp(spec,'fill'));
+  final gradient=designGradient(spec,size);if(gradient!=null)fill.shader=gradient.createShader(Offset.zero & size);
+  if(strProp(spec,'material').isNotEmpty){fill.shader=null;fill.color=designMaterialTint(strProp(spec,'material'));}
+  canvas.drawOval(r,fill);
+  final width=numProp(spec,'borderWidth');if(width>0)canvas.drawOval(r.deflate(width/2),Paint()..color=designColor(strProp(spec,'borderColor'))..style=PaintingStyle.stroke..strokeWidth=width);
+ }
+ @override bool shouldRepaint(DesignOvalPainter old)=>old.spec!=spec || old.circle!=circle;
 }

@@ -38,12 +38,12 @@ final class SwiftImportLayout {
         if let n=Double(SwiftSourceSyntax.text(t)),n.isFinite{return n}
         return nil
     }
-    func text(_ tokens:[SwiftToken]?,reference:String="")->String {
+    func text(_ tokens:[SwiftToken]?,reference:String="",localize:Bool=false)->String {
         guard let tokens,!tokens.isEmpty else{return ""}
         let t=resolved(tokens)
         if let string=t.first(where:{$0.string}),let value=SwiftSourceSyntax.literal(string) {
             if t.contains(where:{$0.text=="?"}) || value.contains("…"){builder.warn("动态文案使用静态样例",reference)}
-            return value
+            return localize ? builder.index.resources.localized(value):value
         }
         let key=SwiftSourceSyntax.text(t)
         if key=="nil"{return ""}
@@ -196,6 +196,7 @@ final class SwiftImportLayout {
             default:return layout(child,width:width,height:height,style:style)
             }
         }
+        if let control=nativeControlLayout(e,width:width,height:height,style:style){return control}
         if e.type=="Form"{return form(e,width:width,height:height,style:style)}
         if e.type=="Section",style.inForm{return section(e,width:width,style:style)}
         if ["NavigationStack","NavigationView"].contains(e.type),let box=navigation(e,width:width,height:height,style:style){return box}
@@ -214,7 +215,7 @@ final class SwiftImportLayout {
             let selected=e.children.first{idealWidth($0,style:style)<=width} ?? e.children.last
             return selected.map{layout($0,width:width,height:height,style:style)} ?? SwiftImportBox(width:0,height:0)
         }
-        let vertical:Set<String>=["VStack","LazyVStack","ScrollView","ScrollViewReader","List","Form","Section","NavigationStack","NavigationView","GeometryReader","Group"]
+        let vertical:Set<String>=["VStack","LazyVStack","ScrollView","ScrollViewReader","List","Form","Section","NavigationStack","NavigationView","GeometryReader","Group","SectionHeader","SectionFooter"]
         if vertical.contains(e.type) || ["HStack","LazyHStack","ZStack"].contains(e.type) {
             let horizontal=["HStack","LazyHStack"].contains(e.type),overlay=e.type=="ZStack"
             let transparent=["Group","NavigationStack","NavigationView","ScrollViewReader","GeometryReader"].contains(e.type)
@@ -253,7 +254,7 @@ final class SwiftImportLayout {
             return SwiftImportBox(width:w,height:h,nodes:nodes)
         }
         if e.type=="Spacer" {return SwiftImportBox(width:max(0,number(args["minLength"]) ?? 0),height:max(0,number(args["minLength"]) ?? 0))}
-        let title=["Color","Rectangle","RoundedRectangle","Circle","Capsule","LinearGradient","RadialGradient"].contains(e.type) ? "":text(args["$0"] ?? args["title"],reference:e.reference)
+        let title=["Color","Rectangle","RoundedRectangle","Circle","Capsule","Ellipse","LinearGradient","RadialGradient"].contains(e.type) ? "":text(args["$0"] ?? args["verbatim"] ?? args["title"],reference:e.reference,localize:args["_localizeTitle"] != nil)
         var kind=SwiftImporter.mappings[e.type] ?? .rectangle
         if e.type=="TextField",SwiftSourceSyntax.text(args["axis"] ?? [])==".vertical"{kind = .textArea}
         if e.type=="Image",args["systemName"] != nil {kind = .icon}
@@ -275,7 +276,7 @@ final class SwiftImportLayout {
         else if kind == .icon {w=max(1,style.font);h=w}
         else if kind == .divider {h=1}
         else if kind == .circle {w=height.map{min(width,$0)} ?? min(width,60);h=w}
-        else if kind == .rectangle {w=width;h=height ?? 60}
+        else if [.rectangle,.ellipse,.capsule].contains(kind) {w=width;h=height ?? 60}
         else if kind == .image {h=160}
         else if kind == .custom {h=54}
         var n=node(e,kind:kind,style:style,width:w,height:h);n.text=title
@@ -284,9 +285,9 @@ final class SwiftImportLayout {
         if kind == .dateField,let date=args["selection"]?.first.flatMap(SwiftSourceSyntax.literal),date.range(of:"^\\d{4}-\\d{2}-\\d{2}$",options:.regularExpression) != nil{n.dateValue=date}
         if kind == .button {n.showIcon=false;n.foreground=style.foreground=="222222" ? style.accent:style.foreground}
         if kind == .icon {n.symbol=text(args["systemName"],reference:e.reference);n.iconSize=max(1,min(500,style.font))}
-        if kind == .iconLabel {n.text=text(args["$0"],reference:e.reference);n.symbol=text(args["systemImage"],reference:e.reference);n.iconSize=style.font}
+        if kind == .iconLabel {n.text=title;n.symbol=text(args["systemImage"],reference:e.reference);n.iconSize=style.font}
         if [.icon,.iconLabel].contains(kind),NSImage(systemSymbolName:n.symbol,accessibilityDescription:nil)==nil {builder.warn("动态图标或当前系统未提供的符号：\(n.symbol)",e.reference);n.symbol="square.dashed"}
-        if [.rectangle,.circle].contains(kind) {
+        if [.rectangle,.circle,.ellipse,.capsule].contains(kind) {
             if e.type=="Color" {
                 if let r=number(args["red"]),let g=number(args["green"]),let b=number(args["blue"]) {n.fill=[r,g,b].map{String(format:"%02X",Int(max(0,min(1,$0))*255))}.joined()}
                 else {n.fill=color(args["$0"]) ?? "F7F7F7";if color(args["$0"])==nil{builder.warn("动态背景色未确定，使用中性占位色",e.reference)}}

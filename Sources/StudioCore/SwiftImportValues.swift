@@ -7,6 +7,13 @@ extension SwiftViewBuilder {
         var context=context,i=0
         while i<tokens.count {
             if ["\n",";"].contains(tokens[i].text){i+=1;continue}
+            if tokens[i].text=="guard" {
+                guard let branch=(i+1..<tokens.count).first(where:{tokens[$0].text=="else"}),branch+1<tokens.count,tokens[branch+1].text=="{" else{return nil}
+                let end=SwiftSourceSyntax.end(tokens,branch+1)
+                guard let flag=condition(Array(tokens[(i+1)..<branch]),context:&context,depth:depth+1) else{return nil}
+                if !flag{return valueBody(Array(tokens[(branch+2)..<end]),context:context,depth:depth+1)}
+                i=end+1;continue
+            }
             if tokens[i].text=="if" || tokens[i].text=="switch" {
                 let isSwitch=tokens[i].text=="switch"
                 guard let open=(i+1..<tokens.count).first(where:{tokens[$0].text=="{"}) else{return nil}
@@ -25,9 +32,9 @@ extension SwiftViewBuilder {
                     if let value=valueBody(selected,context:context,depth:depth+1),selected.contains(where:{$0.text=="return"}) {return value}
                     applyAssignments(selected,to:&context,depth:depth+1)
                 }else {
-                    let raw=SwiftSourceSyntax.text(condition)
-                    guard let flag=boolean(raw) ?? (condition.contains{$0.text=="let"} && condition.contains{$0.text=="nil"} ? false:nil) else{return nil}
-                    if flag,let result=valueBody(Array(tokens[(open+1)..<end]),context:context,depth:depth+1){return result}
+                    var branchContext=context
+                    guard let flag=self.condition(Array(tokens[(i+1)..<open]),context:&branchContext,depth:depth+1) else{return nil}
+                    if flag,let result=valueBody(Array(tokens[(open+1)..<end]),context:branchContext,depth:depth+1){return result}
                     var next=end+1;while next<tokens.count && tokens[next].text=="\n"{next+=1}
                     if next<tokens.count,tokens[next].text=="else" {
                         if !flag{return valueBody(Array(tokens.dropFirst(next+1)),context:context,depth:depth+1)}
@@ -68,11 +75,22 @@ extension SwiftViewBuilder {
         }
         guard let open=t.firstIndex(where:{$0.text=="("}),SwiftSourceSyntax.end(t,open)==t.count-1 else{return nil}
         let name=SwiftSourceSyntax.text(Array(t.prefix(open))),qualified=index.functions[name] != nil ? name:context.owner+"."+name
-        guard let member=index.functions[qualified],evaluating.insert(qualified).inserted else{return nil}
-        defer{evaluating.remove(qualified)}
         let args=SwiftSourceSyntax.arguments(Array(t[(open+1)..<(t.count-1)]))
-        var environment=SwiftImportContext(owner:qualified.split(separator:".").dropLast().joined(separator:"."),values:member.defaults)
-        for (i,param) in member.parameters.enumerated(){if let value=args[param] ?? args["$\(i)"]{environment.values[param]=resolve(value,context,depth:depth+1)}}
+        if let path=context.values[name],path.first?.text=="\\",let argument=args["$0"] {
+            return resolve(resolve(argument,context,depth:depth+1)+Array(path.dropFirst()),context,depth:depth+1)
+        }
+        if let closure=context.values[name],closure.first?.text=="{",closure.last?.text=="}",evaluating.insert(qualified+".closure").inserted {
+            defer{evaluating.remove(qualified+".closure")}
+            let (body,param)=closureBody(Array(closure.dropFirst().dropLast()));var environment=context
+            if let value=args["$0"]{environment.values[param ?? "$0"]=resolve(value,context,depth:depth+1)}
+            return valueBody(body,context:environment,depth:0)
+        }
+        let local=index.views[context.owner]?.computed[name]
+        guard let member=index.functions[qualified] ?? local,evaluating.insert(qualified).inserted else{return nil}
+        defer{evaluating.remove(qualified)}
+        var environment=local != nil ? context:SwiftImportContext(owner:qualified.split(separator:".").dropLast().joined(separator:"."))
+        environment.values.merge(member.defaults){_,new in new}
+        for (i,param) in member.parameters.enumerated(){if let value=args[param] ?? args[member.argumentLabels[param] ?? param] ?? args["$\(i)"]{environment.values[param]=resolve(value,context,depth:depth+1)}}
         return valueBody(member.body,context:environment,depth:0)
     }
 }

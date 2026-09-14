@@ -36,6 +36,7 @@ final class SwiftViewBuilder {
     var expanded=Set<String>()
     var active:[String]=[]
     var evaluating=Set<String>()
+    var entryCache:[String:[String:[SwiftToken]]]=[:]
     var created=0
     let limit=1600
     init(index:SwiftViewIndex,options:SwiftImportOptions=SwiftImportOptions()){
@@ -90,7 +91,8 @@ final class SwiftViewBuilder {
     func reference(_ context:SwiftImportContext,_ line:Int)->String{"\(index.views[context.owner]?.file ?? context.owner):\(line)"}
     func build(_ name:String)->SwiftImportElement {
         guard let definition=index.views[name] else{return SwiftImportElement("Group")}
-        let context=SwiftImportContext(owner:name,values:defaults(definition))
+        var values=defaults(definition);values.merge(entryValues(name)){_,new in new}
+        let context=SwiftImportContext(owner:name,values:values)
         return expand("body",context:context,args:[:],closures:[:])
     }
     func defaults(_ definition:SwiftViewDefinition)->[String:[SwiftToken]] {
@@ -135,6 +137,8 @@ final class SwiftViewBuilder {
         if key.hasPrefix("Self."),let value=index.constants[context.owner+"."+key.dropFirst(5)]{return resolve(value,context,depth:depth+1)}
         if !key.contains("."),let value=index.constants[context.owner+"."+key],SwiftSourceSyntax.text(value) != key{return resolve(value,context,depth:depth+1)}
         if let value=sourceFunction(t,context:context,depth:depth),SwiftSourceSyntax.text(value) != key{return value}
+        if let value=sourceInfoValue(t,context:context,depth:depth){return value}
+        if let value=builtinValue(t,context:context,depth:depth){return value}
         if let value=scalarMember(t,context:context,depth:depth){return value}
         if let value=enumMember(t,context:context,depth:depth){return value}
         if t.first?.text=="!",let flag=boolean(SwiftSourceSyntax.text(resolve(Array(t.dropFirst()),context,depth:depth+1))){return SwiftSourceSyntax.tokens(flag ? "false":"true")}
@@ -210,6 +214,7 @@ final class SwiftViewBuilder {
             else if result[q].text=="?",q+1<result.count,result[q+1].text=="?" {
                 let lhs=resolve(Array(result.prefix(q)),context,depth:depth+1),key=SwiftSourceSyntax.text(lhs)
                 if key=="nil" || (lhs.first?.text=="nil" && lhs.dropFirst().contains{$0.text=="?"}){return resolve(Array(result.dropFirst(q+2)),context,depth:depth+1)}
+                if lhs.count==1,(lhs[0].string || Double(key) != nil || ["true","false"].contains(key)){return lhs}
             }
             else if result[q].text=="?",q+1<result.count,result[q+1].text != "?",result[q+1].text != ".",let condition=boolean(SwiftSourceSyntax.text(resolve(Array(result.prefix(q)),context,depth:depth+1))) {
                 var colon=q+1
@@ -342,7 +347,8 @@ final class SwiftViewBuilder {
     }
     func element(_ call:SwiftImportCall,context:SwiftImportContext)->SwiftImportElement? {
         let name=call.name.replacingOccurrences(of:"SwiftUI.",with:""),ref=reference(context,call.line)
-        let args=call.args.mapValues{resolve($0,context)}
+        var args=call.args.mapValues{resolve($0,context)}
+        if ["Text","Label","Button","Menu","Picker","TextField","SecureField","DatePicker","LabeledContent","ContentUnavailableView","Toggle","NavigationLink","Section"].contains(name),localizedTitle(call.args){args["_localizeTitle"]=SwiftSourceSyntax.tokens("true")}
         func body(_ key:String="$body")->[SwiftImportElement] {sequence(closureBody(call.closures[key] ?? []).0,context:context)}
         if let element=context.elements[name]{return element}
         if index.constants[name] != nil {
@@ -376,8 +382,16 @@ final class SwiftViewBuilder {
             warn("自定义 Layout 采用换行流式布局近似：\(name)",ref)
             return SwiftImportElement("FlowLayout",args:args,children:body(),reference:ref)
         }
+        if let control=nativeControl(call,args:args,context:context){return control}
         if ["VStack","HStack","ZStack","LazyVStack","LazyHStack","Group","NavigationStack","NavigationView","ScrollView","ScrollViewReader","List","Form","Section","GeometryReader","ViewThatFits","ToolbarItem","ToolbarItemGroup"].contains(name) {
             var children=body()
+            if name=="List",args["$0"] != nil,closureBody(call.closures["$body"] ?? []).1 != nil {
+                var loop=call;loop.name="ForEach";children=element(loop,context:context).map{[$0]} ?? []
+            }
+            if name=="Section" {
+                if let header=call.closures["header"] ?? call.args["header"] {children.insert(SwiftImportElement("SectionHeader",children:sequence(header,context:context),reference:ref),at:0)}
+                if let footer=call.closures["footer"] ?? call.args["footer"] {children.append(SwiftImportElement("SectionFooter",children:sequence(footer,context:context),reference:ref))}
+            }
             if name=="GeometryReader"{warn("GeometryReader 按当前画布宽度估算",ref)}
             return SwiftImportElement(name,args:args,children:children,reference:ref)
         }
@@ -390,9 +404,9 @@ final class SwiftViewBuilder {
             for value in values.prefix(20){var next=context;if let param{next.values[param]=value};children += sequence(tokens,context:next)}
             return SwiftImportElement("Group",children:children,reference:ref)
         }
-        if ["Button","NavigationLink","Menu","PhotosPicker"].contains(name) {
+        if ["Button","NavigationLink","PhotosPicker"].contains(name) {
             let label=call.closures["label"] ?? (call.args["$0"]==nil && ["Button","PhotosPicker"].contains(name) ? call.closures["$body"]:nil)
-            if let label{return SwiftImportElement("Group",children:sequence(label,context:context),reference:ref)}
+            if let label{return SwiftImportElement("Group",args:["_buttonLabel":SwiftSourceSyntax.tokens("true")],children:sequence(label,context:context),reference:ref)}
             // Action / destination closures never become visible layers.
             var args=args
             let action=SwiftSourceSyntax.text(call.closures["$body"] ?? call.args["action"] ?? [])
@@ -417,6 +431,7 @@ final class SwiftViewBuilder {
     func modify(_ element:SwiftImportElement,_ modifier:SwiftImportCall,context:SwiftImportContext)->SwiftImportElement {
         let name=modifier.name,ref=reference(context,modifier.line)
         var args=modifier.args.mapValues{resolve($0,context)}
+        if name=="navigationTitle",localizedTitle(modifier.args){args["_localizeTitle"]=SwiftSourceSyntax.tokens("true")}
         if name=="toolbar",let content=modifier.closures["$body"] {return SwiftImportElement(".toolbar",args:args,children:[element]+sequence(content,context:context),reference:ref)}
         if name=="toolbar",SwiftSourceSyntax.text(args["for"] ?? []).contains("navigationBar") {return SwiftImportElement(".navigationBarVisibility",args:args,children:[element],reference:ref)}
         let supported:Set<String>=["padding","frame","offset","position","font","foregroundStyle","foregroundColor","tint","background","overlay","clipShape","cornerRadius","fill","stroke","strokeBorder","opacity","shadow","bold","fontWeight","multilineTextAlignment","buttonStyle","blur","lineSpacing","lineLimit","minimumScaleFactor","tag","navigationTitle","toolbarBackground","listRowBackground","disabled","clipped","scaledToFit","scaledToFill","resizable","aspectRatio","fixedSize","layoutPriority"]

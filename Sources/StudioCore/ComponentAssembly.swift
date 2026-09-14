@@ -47,6 +47,19 @@ public enum ComponentAssembly {
         add(.rectangle,source.name+" · 背景"){Rect(0,0,$0.width,$0.height)}
         let pad=source.padding,gap=source.spacing,icon=source.iconSize
         switch source.kind {
+        case .keyValueRow:
+            let left=pad+(source.hasIcon ? icon+gap:0),end=pad+(source.hasChevron ? 16+gap:0)
+            if source.hasIcon{add(.icon,"前置图标","",source.symbol,asset:source.iconData){Rect(pad,($0.height-icon)/2,icon,icon)}}
+            add(.text,"名称",source.text){Rect(left,($0.height-28)/2,max(1,($0.width-left-end)*0.45),28)}
+            add(.text,"内容",source.subtitle){Rect(left+($0.width-left-end)*0.45,($0.height-28)/2,max(1,($0.width-left-end)*0.55),28)}
+            result[result.count-1].textAlignment="trailing"
+            if source.hasChevron{add(.chevron,"右箭头","","chevron.right",asset:source.chevronIconData){Rect($0.width-pad-16,($0.height-24)/2,16,24)}}
+        case .emptyState:
+            if source.hasIcon{add(.icon,"空状态图标","",source.symbol,asset:source.iconData){Rect(($0.width-icon)/2,pad,icon,icon)}}
+            let titleY=pad+(source.hasIcon ? icon+gap:0)
+            add(.text,"空状态标题",source.text){Rect(pad,titleY,max(1,$0.width-pad*2),30)};result[result.count-1].textAlignment="center"
+            add(.text,"空状态说明",source.subtitle,font:max(11,source.fontSize-5)){Rect(pad,titleY+30+gap,max(1,$0.width-pad*2),50)};result[result.count-1].textAlignment="center"
+            if let title=source.actionTitle,!title.isEmpty{add(.textButton,"空状态操作",title,action:source.targetPageID){Rect(pad,$0.height-pad-34,max(1,$0.width-pad*2),34)}}
         case .profileRow:
             let avatar=source.avatarSize
             add(.avatar,"头像","",source.symbol){Rect(pad,($0.height-avatar)/2,avatar,avatar)}

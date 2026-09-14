@@ -99,7 +99,7 @@ python3 scripts/mcp-smoke.py "/Applications/原境 Frame Studio.app/Contents/Mac
 
 ## 6. Agent 操作顺序
 
-1. `get_project`：读取项目和 revision；`list_components`：读取 43 种组件、分类和属性。
+1. `get_project`：读取项目和 revision；`list_components`：读取 48 种组件、分类和属性。
 2. 修改前使用最新 revision，每次写入传 `expectedRevision`；使用返回的新 revision 继续操作。
 3. `create_page`、`add_component`、`update_component` 等编辑页面。用 `items[].pageID` 绑定 Tab / 侧栏，用 `targetPageID` 绑定按钮。
 4. `import_icon` 从本地文件上传图标；可指定组件插槽，或 `itemID` 与 `selected` 来设置 Tab 图标。
@@ -170,3 +170,12 @@ Beta.6 的检查/导入工具还支持 `canvas: {"width": 402, "height": 874}` �
 
 
 新增 `reorder_components`：传入 pageID、nodeIDs、variant、action（forward / backward / front / back）及 expectedRevision。只调整当前页面的绘制顺序，保留多选顺序，跳过锁定的选中层；不同固定/滚动区域仍分别排序。合并仍使用同页节点的 groupID；选中完整组合后，编辑器显示一个外框。
+
+
+## Beta.10
+
+组件类型新增 capsule、ellipse、keyValueRow、menuButton、emptyState，均通过 add_component / update_component 操作。emptyState 新增可选 actionTitle；菜单使用已有 items 数组（title、symbol、iconData、pageID）。基础类型和分类见 list_components。复杂组合继续使用 create_component_template / insert_component_template，保留 expectedRevision 与原子写入。
+
+inspect_swift_project、inspect_ui_project、import_swift_project、import_ui_project 均接受可选 language（例如 "zh-Hans"），用于选择源码本地化资源；不传则使用源码默认语言。values、colors、canvas、topInset 参数继续可用。先检查返回的 classifications、unmatched 与 warnings，再决定是否需要新增预设、提供真实运行参考值或编辑已有基础图层。不得将占位内容猜成真实业务数据。
+
+导入器仅读取白名单应用元数据和普通字符串翻译；多目标版本值有冲突时不猜测。它不运行源码或读取原 App 的账号数据。该流程面向源项目，不能承诺任意已安装 App 一键完整还原。

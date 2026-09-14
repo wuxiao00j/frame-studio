@@ -91,7 +91,27 @@ void main(){{
   await tester.tap(find.text(spec['text']),warnIfMissed:false);await tester.pump();expect(calls,0);
   await tester.pumpWidget(host(button(true),320,48));await tester.tap(find.text(spec['text']));await tester.pump();expect(calls,1);expect(target,'__back');
  }});
+ testWidgets('menu opens with an uploaded icon and navigates',(tester)async{{
+  final spec=<String,dynamic>{literal(by_kind['menuButton'])};var target='';
+  Widget menu(bool enabled)=>DesignElement(spec:{{...spec,'isEnabled':enabled}},activePage:'test',navigate:(value){{target=value;}},openSidebar:(){{}});
+  await tester.pumpWidget(host(menu(false),160,48));await tester.tap(find.text(spec['text']),warnIfMissed:false);await tester.pumpAndSettle();expect(find.byType(PopupMenuItem<String>),findsNothing);
+  await tester.pumpWidget(host(menu(true),160,48));await tester.tap(find.text(spec['text']));await tester.pumpAndSettle();
+  final first=(spec['items'] as List).first;expect(first['symbol'],'');expect(find.byType(Image),findsOneWidget);
+  await tester.tap(find.text(first['title']));await tester.pumpAndSettle();expect(target,first['pageID']);expect(tester.takeException(),isNull);
+ }});
+ testWidgets('empty-state action and key-value text are editable',(tester)async{{
+  final spec=<String,dynamic>{literal(by_kind['emptyState'])};var target='';
+  await tester.pumpWidget(host(DesignElement(spec:spec,activePage:'test',navigate:(value){{target=value;}},openSidebar:(){{}}),345,210));
+  expect(find.text(spec['subtitle']),findsOneWidget);await tester.tap(find.text(spec['actionTitle']));await tester.pump();expect(target,spec['targetPageID']);expect(tester.takeException(),isNull);
+  await tester.pumpWidget(host(element({{...{literal(by_kind['keyValueRow'])},'text':'Version','subtitle':'2.8'}}),345,52));
+  expect(find.text('Version'),findsOneWidget);expect(find.text('2.8'),findsOneWidget);expect(tester.takeException(),isNull);
+ }});
+ test('ellipse fills its bounds while circle stays circular',(){{
+  final oval=DesignOvalClipper(false).getClip(const Size(200,100)),circle=DesignOvalClipper(true).getClip(const Size(200,100));
+  expect(oval.contains(const Offset(10,50)),isTrue);expect(circle.contains(const Offset(10,50)),isFalse);
+  expect(oval.contains(const Offset(10,10)),isFalse);expect(circle.contains(const Offset(100,50)),isTrue);
+ }});
 }}
 """
 (root/'test/rich_features_test.dart').write_text(test)
-print('Prepared 10 additional checks for interactions, retained masks, text fitting, materials and image modes.')
+print('Prepared 13 additional checks for menus, empty states, geometry, interactions, masks and rendering.')

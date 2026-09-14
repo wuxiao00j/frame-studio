@@ -225,11 +225,17 @@ import StudioCore
     func importSwift() {
         let panel=NSOpenPanel();panel.canChooseDirectories=true;panel.canChooseFiles=true
         panel.message="选择旧 UI 源码；将另存为独立设计，避免与当前项目的页面和 Tab 混合"
+        let language=NSComboBox(frame:NSRect(x:0,y:0,width:220,height:26))
+        language.addItems(withObjectValues:["自动（源码默认语言）","zh-Hans","zh-Hant","en","ja","ko","fr","de","es"]);language.selectItem(at:0)
+        let accessory=NSStackView(views:[NSTextField(labelWithString:"导入语言"),language]);accessory.spacing=10
+        panel.accessoryView=accessory;panel.isAccessoryViewDisclosed=true
         guard panel.runModal() == .OK,let file=panel.url else{return}
+        let code=language.stringValue.trimmingCharacters(in:.whitespacesAndNewlines)
+        let options=SwiftImportOptions(language:code.isEmpty || code.hasPrefix("自动") ? nil:code)
         status="正在读取 View 结构与复用组件…"
         Task {
             do {
-                let report=try await Task.detached {try SwiftImporter.inspect(file)}.value
+                let report=try await Task.detached {try SwiftImporter.inspect(file,options:options)}.value
                 guard !report.pages.isEmpty else{throw StudioError.invalid("未找到可导入的 View 页面。请查看源目录或通过 Agent 读取源码。")}
                 let save=NSSavePanel();save.nameFieldStringValue=file.deletingPathExtension().lastPathComponent+".framestudio"
                 save.message="保存为新的设计项目；原项目与当前设计均保留"

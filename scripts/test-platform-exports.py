@@ -14,7 +14,9 @@ def tool(name,args={}):
  r=rpc('tools/call',{'name':name,'arguments':args});assert not r['isError'],r;return json.loads(r['content'][0]['text'])
 rpc('initialize',{'protocolVersion':'2025-06-18'})
 design=tool('get_project');design=tool('create_page',{'name':'全部组件','expectedRevision':design['revision']});page=design['pages'][-1]['id']
-for kind in tool('list_components')['components']:
+components=tool('list_components')['components']
+assert len(components)==48
+for kind in components:
  design=tool('add_component',{'pageID':page,'kind':kind['kind'],'expectedRevision':design['revision']})
 # Exercise injected-looking strings, alpha colors, real images and native custom expressions.
 png=__import__('base64').b64encode((root/'Resources/AppIcon.iconset/icon_32x32.png').read_bytes()).decode()
@@ -36,6 +38,8 @@ for node in design['pages'][-1]['nodes']:
  if node['kind'] in ['rectangle','circle']:
   node['gradient']={'kind':'radial' if node['kind']=='circle' else 'linear','stops':[{'color':'FF000080','location':0},{'color':'3366FFFF','location':1}],'startX':0.5,'startY':0.5 if node['kind']=='circle' else 0,'endX':1,'endY':1,'startRadius':0,'endRadius':80}
   node['blurRadius']=3;node['shadowColor']='3366AA55';node['shadowX']=2;node['shadowY']=4;node['shadow']=6
+ if node['kind']=='emptyState':node['actionTitle']='创建记录';node['targetPageID']=design['pages'][0]['id']
+ if node['kind']=='menuButton':node['items'][0]['symbol']='';node['items'][0]['iconData']=png;node['items'][0]['pageID']=design['pages'][0]['id']
  if node['kind']=='tabBar':
   node['items'][0]['iconData']=png;node['items'][0]['selectedIconData']=png
 design=tool('replace_project',{'project':design,'expectedRevision':design['revision']})
@@ -54,5 +58,5 @@ for toolname in ['export_android','export_flutter']:
  r=tool(toolname,{'directory':str(artifacts)});assert pathlib.Path(r['directory']).exists()
 (artifacts/'paths.json').write_text(json.dumps(paths,indent=2))
 p.stdin.close();assert p.wait(timeout=10)==0
-print('PLATFORM_EXPORTS_PASS: 43 components, image assets, custom code, string escaping, per-page files, navigation and all six layouts.')
+print('PLATFORM_EXPORTS_PASS: 48 components, image assets, custom code, string escaping, per-page files, navigation and all six layouts.')
 print(json.dumps(paths,ensure_ascii=False))

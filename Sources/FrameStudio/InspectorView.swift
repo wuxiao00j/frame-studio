@@ -79,7 +79,7 @@ import StudioCore
         BehaviorInspector(session:session,node:node)
         InspectorSection(title:"内容"){
             TextField("标题 / 文本",text:binding(\.text),axis:.vertical).lineLimit(1...5).textFieldStyle(.roundedBorder)
-            if [.profileRow,.listRow,.card].contains(node.kind){TextField("副标题",text:binding(\.subtitle),axis:.vertical).lineLimit(1...3).textFieldStyle(.roundedBorder)}
+            if [.profileRow,.listRow,.card,.statistic,.alertBanner,.keyValueRow,.emptyState].contains(node.kind){TextField("副标题",text:binding(\.subtitle),axis:.vertical).lineLimit(1...3).textFieldStyle(.roundedBorder)}
             HStack{Image(systemName:node.symbol).font(.system(size:20)).frame(width:30);TextField("SF Symbol 名称",text:binding(\.symbol)).textFieldStyle(.roundedBorder);Button{symbolPicker=true}label:{Image(systemName:"square.grid.2x2")}.help("替换图标")}
             if [.image,.avatar,.profileRow,.icon,.iconButton].contains(node.kind){HStack{Button("替换图片 / 头像"){session.chooseImage(node.id)};if !node.imageData.isEmpty{Button("移除"){session.updateNode(node.id){$0.imageData=""}}}}.font(.system(size:10))}
             HStack{NumberField(label:"字号",value:binding(\.fontSize));NumberField(label:"图标",value:binding(\.iconSize))}
@@ -96,7 +96,7 @@ import StudioCore
         TextImageInspector(session:session,node:node)
         FillEffectsInspector(session:session,node:node)
         if node.kind == .slider {InspectorSection(title:"滑块初始值"){Slider(value:binding(\.value),in:0...1)}}
-        if [.tabBar,.sidebar,.segmented,.selectField].contains(node.kind){NavigationItemsInspector(session:session,node:node)}
+        if [.tabBar,.sidebar,.segmented,.selectField,.menuButton].contains(node.kind){NavigationItemsInspector(session:session,node:node)}
         InspectorSection(title:"交互"){
             Picker("点击跳转",selection:binding(\.targetPageID)){Text("无").tag("");ForEach(session.project.pages){Text($0.name).tag($0.id)}}.font(.system(size:10))
             if node.kind == .iconButton || node.kind == .navigationBar{Text("侧栏图标在预览时展开页面导航。").font(.system(size:10)).foregroundStyle(studioMuted)}

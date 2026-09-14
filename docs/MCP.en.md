@@ -99,7 +99,7 @@ The smoke test uses a temporary document unless a project is specified and print
 
 ## 6. Agent workflow
 
-1. Call `get_project` for the document and revision, then `list_components` for the 43 component types, categories and properties.
+1. Call `get_project` for the document and revision, then `list_components` for the 48 component types, categories and properties.
 2. Read the current revision before edits. Every design mutation requires `expectedRevision`; use the revision returned by the previous mutation.
 3. Edit with page and component tools. Bind Tab / sidebar items through `items[].pageID` and buttons through `targetPageID`.
 4. Use `import_icon` with a local image path. Select a component slot or use `itemID` and `selected` for Tab icons.
@@ -170,3 +170,12 @@ The local personal library is a standard design file at `~/Library/Application S
 
 
 Added `reorder_components` with pageID, nodeIDs, variant, action (forward / backward / front / back) and expectedRevision. It changes the current page's drawing order, preserves selection order and skips locked selections while retaining separate pinned/scrolling planes. Groups continue to use same-page node groupIDs; selecting a complete group displays one outer frame in the editor.
+
+
+## Beta.10
+
+Added capsule, ellipse, keyValueRow, menuButton and emptyState kinds, available through add_component / update_component. emptyState adds optional actionTitle. Menus use the existing items array with title, symbol, iconData and pageID. Query list_components for types and categories. Continue using create_component_template / insert_component_template for composites, preserving expectedRevision and atomic writes.
+
+inspect_swift_project, inspect_ui_project, import_swift_project and import_ui_project accept optional language, such as "zh-Hans", to select source localization resources; omission uses the source default. Existing values, colors, canvas and topInset options remain available. Review classifications, unmatched and warnings before deciding to add a preset, supply observed runtime values or edit existing primitives. Do not invent business data for unresolved content.
+
+The importer reads only allowlisted application metadata and ordinary string translations. It leaves conflicting multi-target version values unresolved. It does not execute source or read the original app's account data. This workflow targets source projects and does not promise complete one-click conversion of arbitrary installed applications.

@@ -2,8 +2,8 @@ import Foundation
 
 enum SwiftStructuredImporter {
     struct Tab {var view:String;var title:String;var symbol:String}
-    static func inspect(files:[URL],assets:[URL],options:SwiftImportOptions)->ImportReport {
-        let index=SwiftViewIndex(files:files),builder=SwiftViewBuilder(index:index,options:options),layout=SwiftImportLayout(builder:builder,assets:assets)
+    static func inspect(files:[URL],assets:[URL],options:SwiftImportOptions,resources:SwiftImportResources=SwiftImportResources())->ImportReport {
+        let index=SwiftViewIndex(files:files,resources:resources),builder=SwiftViewBuilder(index:index,options:options),layout=SwiftImportLayout(builder:builder,assets:assets)
         var tabs:[Tab]=[],tabOwners=Set<String>()
         var tabTint:String?
         for definition in index.views.values.sorted(by:{$0.name<$1.name}) {

@@ -2,17 +2,17 @@
 
 **Native macOS UI designer · 原生 macOS 手机 UI 设计工具**
 
-[下载 Beta / Download Beta](https://github.com/wuxiao00j/frame-studio/releases/tag/v1.2.0-beta.9) · [中文使用指南](docs/USER-GUIDE.zh-CN.md) · [English guide](docs/USER-GUIDE.en.md) · [MCP 中文](docs/MCP.zh-CN.md) · [MCP English](docs/MCP.en.md)
+[下载 Beta / Download Beta](https://github.com/wuxiao00j/frame-studio/releases/tag/v1.2.0-beta.10) · [中文使用指南](docs/USER-GUIDE.zh-CN.md) · [English guide](docs/USER-GUIDE.en.md) · [MCP 中文](docs/MCP.zh-CN.md) · [MCP English](docs/MCP.en.md)
 
 ## 中文
 
 原境是一款使用 SwiftUI 编写的 Mac 应用，用来拖拽搭建手机 App 页面，并通过本地 MCP 与 Agent 协作。
 
-**当前版本：v1.2.0-beta.9（测试版）。导出仅包含 UI 源码、图片资源、项目配置和设计文件，不生成 APK、AAB、IPA 或可安装手机 App。** 项目骨架和页面交互是原型；业务功能、网络、登录、支付、数据存储、异常处理及正式发布仍需开发。
+**当前版本：v1.2.0-beta.10（测试版）。导出仅包含 UI 源码、图片资源、项目配置和设计文件，不生成 APK、AAB、IPA 或可安装手机 App。** 项目骨架和页面交互是原型；业务功能、网络、登录、支付、数据存储、异常处理及正式发布仍需开发。
 
 ### 功能
 
-- 43 种细分组件，自由拖拽、缩放、多选、对齐、吸附和圆角滑块。
+- 48 种细分组件（含胶囊、椭圆、键值行、菜单与空状态），自由拖拽、缩放、多选、对齐、吸附和圆角滑块。
 - 长页面滚动、固定导航 / Tab，标准屏与阔屏内外屏横竖布局。
 - 开关左右排列、条形 / 环形 / 分段进度、百分比与当前值 / 总量。
 - 列表自动紧贴、外侧圆角；头像栏二维码与箭头可隐藏。
@@ -25,11 +25,14 @@
 - 7 个内置组合样式，按分类搜索的组件库，以及跨项目复用的本机个人组件库。
 - 枚举选项与初始状态解析、分组表单、顶部工具栏、手机表单行样式和默认选项。
 - SwiftUI 按 View 结构导入、展开复用组件；动态内容与未匹配视图分别说明，保存为独立草稿。
+- 支持选择源码语言、普通字符串翻译、应用名称 / 版本及可确定的父页面参数；动态运行数据仍需补充。
 - 28 个本地 MCP 工具，供 Agent 读取和修改设计、导入图标与导出源码。
+
+本阶段主要完善有源码的 SwiftUI 项目；Flutter、Compose 和 Web 源码仍需 Agent 辅助，不支持任意已安装 App 或安装包的一键完整还原。
 
 ### 开始使用
 
-1. 下载 Release 中的 `FrameStudio-v1.2.0-beta.9-macOS-arm64.zip`。
+1. 下载 Release 中的 `FrameStudio-v1.2.0-beta.10-macOS-arm64.zip`。
 2. 解压，将 `原境 Frame Studio.app` 放到“应用程序”，然后打开。
 3. 从左侧拖入组件，在右侧编辑属性。选择“导出代码”并指定平台和文件夹。
 4. 需要 Agent 协作时，点击左下角“与 Agent 一起设计”，按 [MCP 指南](docs/MCP.zh-CN.md) 配置本地服务。
@@ -42,11 +45,11 @@
 
 Frame Studio is a native SwiftUI macOS application for composing mobile UI screens and collaborating with agents through a local MCP server.
 
-**Current version: v1.2.0-beta.9. Exports contain UI source code, assets, project configuration and the design document only. They do not generate APK, AAB, IPA or installable mobile applications.** Scaffolds and local interactions are prototypes. Production features, networking, authentication, payments, persistence, error handling and distribution remain development work.
+**Current version: v1.2.0-beta.10. Exports contain UI source code, assets, project configuration and the design document only. They do not generate APK, AAB, IPA or installable mobile applications.** Scaffolds and local interactions are prototypes. Production features, networking, authentication, payments, persistence, error handling and distribution remain development work.
 
 ### Features
 
-- 43 component types with drag, resize, multi-selection, alignment, snapping and corner-radius sliders.
+- 48 component types, including capsules, ellipses, key-value rows, menus and empty states, with drag, resize, multi-selection, alignment, snapping and corner-radius sliders.
 - Scrollable pages, pinned navigation / tabs, standard and wide inner / outer layouts in both orientations.
 - Leading / trailing switches and linear, circular or stepped progress with percentage or current / total labels.
 - Joined list rows with outer corners; optional profile QR and chevron icons.
@@ -59,11 +62,14 @@ Frame Studio is a native SwiftUI macOS application for composing mobile UI scree
 - Seven bundled composite styles, categorized template search and a local personal library shared across projects.
 - Enum options and initial-state resolution, grouped forms, top toolbars, mobile form-row styling and initial selection.
 - Structured SwiftUI import with reusable component expansion, independent drafts and separate dynamic-content / unmatched-view reports.
+- Source-language selection, ordinary string translations, app names / versions and known parent-page inputs; runtime data still requires input.
 - 28 local MCP tools for inspecting and editing designs, importing icons and exporting source.
+
+This phase focuses on SwiftUI source projects. Flutter, Compose and Web source still require agent assistance; arbitrary installed apps or installation packages cannot be fully reconstructed in one click.
 
 ### Quick start
 
-1. Download `FrameStudio-v1.2.0-beta.9-macOS-arm64.zip` from the Beta release.
+1. Download `FrameStudio-v1.2.0-beta.10-macOS-arm64.zip` from the Beta release.
 2. Unzip it, move `原境 Frame Studio.app` into Applications, and open it.
 3. Drag components onto the canvas, edit properties, and choose **导出代码 / Export code** to select a platform and destination.
 4. To collaborate with an agent, open the lower-left Agent panel and follow the [MCP guide](docs/MCP.en.md).
